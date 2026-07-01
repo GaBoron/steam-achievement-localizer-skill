@@ -1,3 +1,5 @@
+English | [简体中文](README_CN.md)
+
 # Steam Achievement Localizer Skill
 
 A Codex skill for safely localizing Steam achievement schema files
@@ -22,11 +24,37 @@ must round-trip byte-for-byte.
 
 ## Install
 
-Copy this folder into your Codex skills directory:
+### Option 1: Release zip
+
+Download `steam-achievement-localizer.zip` from GitHub Releases and extract it
+directly into your Codex skills directory:
 
 ```powershell
+Expand-Archive .\steam-achievement-localizer.zip -DestinationPath "$env:USERPROFILE\.codex\skills" -Force
+```
+
+After extraction, the installed path should look like:
+
+```text
+%USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
+```
+
+### Option 2: Copy from the repository
+
+Clone this repository and copy it into your Codex skills directory:
+
+```powershell
+git clone https://github.com/GaBoron/steam-achievement-localizer-skill.git
 Copy-Item -Recurse steam-achievement-localizer-skill `
   "$env:USERPROFILE\.codex\skills\steam-achievement-localizer"
+```
+
+### Option 3: Codex prompt install
+
+Ask Codex:
+
+```text
+Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
 ```
 
 Then ask Codex to use:
@@ -106,7 +134,7 @@ ACH_COLLECT_100,收藏家,收集100个物品
 - `SKILL.md`: Codex skill instructions.
 - `scripts/steam_bkv_tool.py`: Binary KeyValues parser, exporter, writer, and
   localization tool.
-- `README.zh-CN.md`: Chinese documentation.
+- `README_CN.md`: Chinese documentation.
 
 ## License
 

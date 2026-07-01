@@ -1,3 +1,5 @@
+[English](README.md) | 简体中文
+
 # Steam Achievement Localizer Skill
 
 这是一个 Codex skill，用于安全地翻译 Steam 本地成就描述文件
@@ -19,14 +21,40 @@
 
 ## 安装
 
-把整个目录复制到 Codex skills 目录：
+### 方式一：Release zip
+
+从 GitHub Releases 下载 `steam-achievement-localizer.zip`，解压后把
+`steam-achievement-localizer` 文件夹放到 Codex skills 目录：
 
 ```powershell
-Copy-Item -Recurse steam-achievement-localizer-skill `
+Expand-Archive .\steam-achievement-localizer.zip -DestinationPath "$env:USERPROFILE\.codex\skills" -Force
+```
+
+安装后目录应类似：
+
+```text
+%USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
+```
+
+### 方式二：从仓库复制
+
+克隆仓库后复制到 Codex skills 目录：
+
+```powershell
+git clone https://github.com/GaBoron/steam-achievement-localizer-skill.git
+Copy-Item -Recurse .\steam-achievement-localizer-skill `
   "$env:USERPROFILE\.codex\skills\steam-achievement-localizer"
 ```
 
-然后让 Codex 使用：
+### 方式三：Codex prompt 安装
+
+在 Codex 里输入：
+
+```text
+Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
+```
+
+安装后让 Codex 使用：
 
 ```text
 使用 $steam-achievement-localizer 翻译这个 Steam 成就 schema。
@@ -101,7 +129,7 @@ ACH_COLLECT_100,收藏家,收集100个物品
 
 - `SKILL.md`：Codex skill 说明。
 - `scripts/steam_bkv_tool.py`：Binary KeyValues 解析、导出、写回和本地化工具。
-- `README.zh-CN.md`：中文说明。
+- `README_CN.md`：中文说明。
 
 ## 许可证
 
