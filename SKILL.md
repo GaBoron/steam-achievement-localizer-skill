@@ -1,6 +1,6 @@
 ---
 name: steam-achievement-localizer
-description: Localize Steam UserGameStatsSchema_*.bin achievement schema files by parsing Binary KeyValues losslessly, exporting achievement text, merging translations from a trusted source such as an already-open wiki page or user-provided CSV, writing only the requested Steam language field such as schinese/tchinese/japanese/koreana, and verifying byte-identical round trips. Use when translating Steam achievement names/descriptions, updating Steam achievement localization fields, or replacing an appcache stats schema with a localized copy.
+description: Localize Steam UserGameStatsSchema_*.bin achievement schema files by parsing Binary KeyValues losslessly, exporting achievement text, preparing or merging translations from user-provided CSVs, official localization, glossaries, community references, or AI-assisted translation, writing only the requested Steam language field such as schinese/tchinese/japanese/koreana, and verifying byte-identical round trips. Use when translating Steam achievement names/descriptions, updating Steam achievement localization fields, or preparing a verified localized replacement for a Steam appcache stats schema.
 ---
 
 # Steam Achievement Localizer
@@ -46,11 +46,12 @@ Translation CSV accepted columns:
 
 ## Workflow
 
-1. **Inspect Git and file scope**
-   - Follow the user's AGENTS.md Git rules before edits.
-   - Treat Steam install/appcache paths as live external files. Work in the workspace first.
+1. **Establish file scope**
+   - Identify the source `.bin`, target Steam language code, output directory, and whether the user wants review-first CSV output or direct localized binary output.
+   - Treat Steam install/appcache paths as live external files. Work on copies in a workspace or output directory first.
+   - If the source file is inside a Git repository, protect unrelated user changes and manage only artifacts created for the localization task.
 
-2. **Study references only when needed**
+2. **Consult format references only when needed**
    - For Binary KeyValues details, prefer these implementations:
      - `CommitteeOfZero/achievement_reconstructor`: `lib/dumpers.py`, `reader.py`, `writer.py`, `types.py`
      - `PaulCombal/SamRewritten`: `src/backend/key_value.rs`
@@ -62,17 +63,17 @@ Translation CSV accepted columns:
    - Use the exported `*.achievements.csv` to inspect IDs, English names, and descriptions.
 
 4. **Collect trusted translations**
-   - Prefer a game wiki, official localization table, existing local game resource, or user-provided CSV.
-   - If the user has already opened a protected wiki page in Chrome, use the Chrome control skill to claim that tab and extract table rows from the live DOM rather than using external web requests.
-   - For wiki tables, export raw rows to JSON before merging. Keep columns such as ID, localized name, localized description text, unlock condition, and reward.
+   - Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass.
+   - Preserve source provenance in a note, intermediate file, or report when translations come from external references.
+   - If translating from scratch, follow the user's glossary, tone, title-casing, item-name, character-name, and terminology preferences.
 
-5. **Normalize wiki text**
-   - Many wiki cells contain `Chinese + English original` in one cell. Strip the English duplicate before writing the target language.
-   - Clean mixed wiki cells that append English tails, for example target-language text followed by You Unlocked "MAGDALENE", "THE BOOK OF REVELATIONS" has appeared in the basement, or "GOLDEN GOD" achieved.
-   - Preserve target-language punctuation and quote marks. Do not strip them when removing ASCII quoted English text.
-   - Do not consider "contains Chinese" sufficient. Check for remaining Latin words in the target fields unless the target language legitimately uses Latin text.
+5. **Normalize target text**
+   - Keep one clean target-language name and description per achievement.
+   - Remove duplicated source-language text only when it is clearly appended or repeated beside the target translation.
+   - Preserve intentional names, acronyms, numbers, placeholders, punctuation, and quotation marks.
+   - Flag mixed-language residue for review unless the target language normally uses that text or the user requested it.
 
-6. **Merge by achievement ID**
+6. **Merge by stable achievement ID**
    - Match translation rows to schema rows by achievement ID/API name, not by row order or English name.
    - Require counts to match or report missing/extra IDs.
    - For each achievement, write target language name to `display/name/<language>` and target language description to `display/desc/<language>`.
@@ -82,23 +83,12 @@ Translation CSV accepted columns:
    - Require localized `roundtrip_equal: true`.
    - Confirm achievement count matches the source.
    - Confirm every achievement has the target language name and description.
-   - For CJK targets such as `schinese`, check no Latin-word residue remains in target fields unless intentionally allowed.
+   - Check for suspicious source-language residue, empty target fields, missing IDs, and unexpected extra IDs.
 
 8. **Install only on request**
    - If the user asks to put the file back, copy the original Steam file to a workspace/output backup first.
    - Copy the localized file to the original folder with the original filename.
    - Re-read the installed file, compare SHA-256 to the localized copy, and parse it once more.
-
-## Chrome Extraction Pattern
-
-When the user opens a wiki page in Chrome:
-
-1. Load `chrome:control-chrome` and use the browser extension, not separate web requests.
-2. Claim the matching tab from `browser.user.openTabs()`.
-3. Inspect table headers and sample rows.
-4. Extract rows with a single `tab.playwright.evaluate` call, for example returning `{id, nameCell, descriptionCell, unlockCondition, reward}`.
-5. Save raw extracted rows to `outputs/wiki_achievements.json` or an equivalent artifact.
-6. Merge into the translation CSV, then run the script to apply and verify.
 
 ## Completion Report
 
@@ -109,5 +99,5 @@ Report these facts at the end:
 - Original SHA-256 and localized SHA-256.
 - Roundtrip byte equality for original and localized copy.
 - Achievement count and target-language coverage count.
-- Missing IDs, extra IDs, or text residue counts.
-- Paths to localized `.bin`, translation CSV, raw translation source export, and reports.
+- Missing IDs, extra IDs, empty target fields, or text residue counts.
+- Paths to localized `.bin`, translation CSV, translation source notes or exports, and reports.
