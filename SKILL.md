@@ -9,13 +9,15 @@ Use this skill to translate Steam achievement schema files such as `UserGameStat
 
 ## Version Preflight
 
-Before every localization task, check whether the installed skill version matches the latest GitHub tag:
+Before every localization task, run the version preflight, but use its cache so repeated skill calls do not waste time:
 
 ```bash
 python <skill>/scripts/steam_bkv_tool.py version-check --warn-only
 ```
 
-Report the local version, the latest GitHub tag, and whether they match. If the versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
+The default cache window is 24 hours. It still reads the local `VERSION` every time, but reuses a recent successful GitHub tag result unless the cache is stale. Use `--force` before risky installs, after an update, when diagnosing version-related bugs, or when the user explicitly asks for a fresh check.
+
+Report the local version, latest GitHub tag, whether the result came from cache, and whether they match. If the versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
 
 ## Core Rules
 
@@ -30,13 +32,25 @@ Report the local version, the latest GitHub tag, and whether they match. If the 
 
 Use `scripts/steam_bkv_tool.py` for deterministic parsing, exporting, applying translations, version checks, and verification.
 
+Find a local Steam schema by game ID:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py find-schema --game-id 123456
+```
+
+List all local Steam schema files:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py find-schema
+```
+
 Preferred automated workflow by game ID:
 
 ```bash
 python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
 ```
 
-This checks the skill version, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, writes a report, and leaves the original Steam file untouched.
+This runs the cached skill version preflight, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, exports `*.missing.csv` for achievements missing the target language, writes a report, and leaves the original Steam file untouched.
 
 Apply a reviewed translation CSV:
 
@@ -74,10 +88,13 @@ Translation CSV accepted columns:
 - Name: `<language>_name`, `target_name`, `translated_name`, `name_zh`, or `schinese_name`
 - Description: `<language>_description`, `target_description`, `translated_description`, `description_zh`, or `schinese_description`
 
+The generated `*.missing.csv` file uses `target_name` and `target_description` columns. Ask AI to batch-fill every row in that file when the user wants all achievements missing the requested language to be translated at once.
+
 ## Workflow
 
 1. **Establish file scope**
-   - Start with the version preflight. If using `workflow`, keep its built-in version check enabled unless the user explicitly accepts skipping it.
+   - Start with the cached version preflight. If using `workflow`, keep its built-in version check enabled unless the user explicitly accepts skipping it.
+   - Use `find-schema --game-id <id>` or `workflow --game-id <id>` to automate Steam install discovery and schema-file lookup.
    - Identify the source `.bin`, target Steam language code, output directory, and whether the user wants review-first CSV output or direct localized binary output.
    - Treat Steam install/appcache paths as live external files. Work on copies in a workspace or output directory first.
    - If the source file is inside a Git repository, protect unrelated user changes and manage only artifacts created for the localization task.
@@ -94,12 +111,14 @@ Translation CSV accepted columns:
    - Use the exported `*.achievements.csv` to inspect IDs, English names, and descriptions.
 
 4. **Collect trusted translations**
+   - For batch missing-language work, use the generated `*.missing.csv`, translate every row that lacks the target language, and write the result to a CSV accepted by the script.
    - Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass.
    - Preserve source provenance in a note, intermediate file, or report when translations come from external references.
    - If translating from scratch, follow the user's glossary, tone, title-casing, item-name, character-name, and terminology preferences.
 
 5. **Normalize target text**
    - Keep one clean target-language name and description per achievement.
+   - Keep translated text plain and single-line. Do not include NUL bytes, ASCII control characters, raw escape sequences, tabs, or line breaks. The script sanitizes these before writing and reports `translation_text_sanitized_count`; investigate any nonzero count.
    - Remove duplicated source-language text only when it is clearly appended or repeated beside the target translation.
    - Preserve intentional names, acronyms, numbers, placeholders, punctuation, and quotation marks.
    - Flag mixed-language residue for review unless the target language normally uses that text or the user requested it.
@@ -126,10 +145,11 @@ Translation CSV accepted columns:
 Report these facts at the end:
 
 - Original file path and whether it was overwritten.
-- Version preflight result: local version, latest GitHub tag, and whether they match.
+- Version preflight result: local version, latest GitHub tag, cache status, and whether they match.
 - Backup path if installed.
 - Original SHA-256 and localized SHA-256.
 - Roundtrip byte equality for original and localized copy.
 - Achievement count and target-language coverage count.
 - Missing IDs, extra IDs, empty target fields, or text residue counts.
+- Missing-language CSV path and translation text sanitization count.
 - Paths to localized `.bin`, translation CSV, translation source notes or exports, and reports.

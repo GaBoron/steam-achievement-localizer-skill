@@ -22,6 +22,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = SKILL_ROOT / "VERSION"
 REPO_URL = "https://github.com/GaBoron/steam-achievement-localizer-skill.git"
 TAGS_API_URL = "https://api.github.com/repos/GaBoron/steam-achievement-localizer-skill/tags?per_page=100"
+VERSION_CACHE_NAME = "version-check.json"
 
 
 @dataclass
@@ -216,6 +217,25 @@ def export_csv(rows: list[dict[str, Any]], path: Path) -> None:
         w.writerows(rows)
 
 
+def export_missing_translation_csv(rows: list[dict[str, Any]], lang: str, path: Path) -> int:
+    missing = [
+        {
+            "api_name": r.get("api_name", ""),
+            "english_name": r.get("english_name", ""),
+            "english_description": r.get("english_description", ""),
+            "target_name": "",
+            "target_description": "",
+        }
+        for r in rows
+        if not r.get(f"{lang}_name", "").strip() or not r.get(f"{lang}_description", "").strip()
+    ]
+    with path.open("w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["api_name", "english_name", "english_description", "target_name", "target_description"])
+        w.writeheader()
+        w.writerows(missing)
+    return len(missing)
+
+
 def pick(row: dict[str, str], keys: list[str]) -> str:
     for k in keys:
         if row.get(k, "").strip():
@@ -223,16 +243,33 @@ def pick(row: dict[str, str], keys: list[str]) -> str:
     return ""
 
 
-def load_translations(path: Path, lang: str) -> dict[str, tuple[str, str]]:
+@dataclass
+class TranslationLoadResult:
+    entries: dict[str, tuple[str, str]]
+    sanitized_count: int = 0
+
+
+def clean_translation_text(value: str) -> tuple[str, bool]:
+    cleaned = re.sub(r"[\r\n\t]+", " ", value)
+    cleaned = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", cleaned)
+    cleaned = re.sub(r" {2,}", " ", cleaned).strip()
+    return cleaned, cleaned != value
+
+
+def load_translations(path: Path, lang: str) -> TranslationLoadResult:
     out: dict[str, tuple[str, str]] = {}
+    sanitized_count = 0
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
             key = pick(row, ["api_name", "id", "achievement_id", "name"])
             target_name = pick(row, [f"{lang}_name", "target_name", "translated_name", "name_zh", "schinese_name"])
             target_desc = pick(row, [f"{lang}_description", "target_description", "translated_description", "description_zh", "schinese_description"])
+            target_name, changed_name = clean_translation_text(target_name)
+            target_desc, changed_desc = clean_translation_text(target_desc)
+            sanitized_count += int(changed_name) + int(changed_desc)
             if key and (target_name or target_desc):
                 out[key] = (target_name, target_desc)
-    return out
+    return TranslationLoadResult(out, sanitized_count)
 
 
 def upsert_string(parent: Node, lang: str, value: str) -> bool:
@@ -316,6 +353,27 @@ def latest_github_tag() -> tuple[str | None, str, str | None]:
     return None, "unavailable", git_error
 
 
+def default_version_cache_path() -> Path:
+    base = os.environ.get("LOCALAPPDATA")
+    if base:
+        return Path(base) / "SteamAchievementLocalizerSkill" / VERSION_CACHE_NAME
+    return Path.home() / ".cache" / "steam-achievement-localizer-skill" / VERSION_CACHE_NAME
+
+
+def read_version_cache(cache_file: Path) -> dict[str, Any] | None:
+    try:
+        return json.loads(cache_file.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
+def write_version_cache(cache_file: Path, report: dict[str, Any]) -> None:
+    if not report.get("github_latest_tag"):
+        return
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def local_version() -> tuple[str | None, str]:
     if VERSION_FILE.exists():
         version = VERSION_FILE.read_text(encoding="utf-8").strip()
@@ -343,8 +401,28 @@ def git_worktree_state() -> dict[str, Any]:
     }
 
 
-def build_version_report() -> dict[str, Any]:
+def build_version_report(max_age_hours: float = 24.0, force: bool = False, cache_file: Path | None = None) -> dict[str, Any]:
     local, source = local_version()
+    cache_path = cache_file or default_version_cache_path()
+    now = time.time()
+    if not force and max_age_hours > 0:
+        cached = read_version_cache(cache_path)
+        if cached and cached.get("github_latest_tag") and cached.get("local_version") == local:
+            checked_at = float(cached.get("checked_at_epoch", 0))
+            age_seconds = now - checked_at
+            if 0 <= age_seconds <= max_age_hours * 3600:
+                report = dict(cached)
+                report.update({
+                    "local_version": local,
+                    "local_version_source": source,
+                    "versions_match": bool(local and report.get("github_latest_tag") and local == report.get("github_latest_tag")),
+                    "cache_file": str(cache_path),
+                    "cache_hit": True,
+                    "cache_age_seconds": round(age_seconds, 3),
+                    "checked_now": False,
+                })
+                report.update(git_worktree_state())
+                return report
     latest, latest_source, error = latest_github_tag()
     report: dict[str, Any] = {
         "local_version": local,
@@ -353,8 +431,14 @@ def build_version_report() -> dict[str, Any]:
         "github_latest_tag_source": latest_source,
         "versions_match": bool(local and latest and local == latest),
         "check_error": error,
+        "cache_file": str(cache_path),
+        "cache_hit": False,
+        "cache_age_seconds": None,
+        "checked_now": True,
+        "checked_at_epoch": now,
     }
     report.update(git_worktree_state())
+    write_version_cache(cache_path, report)
     return report
 
 
@@ -414,6 +498,35 @@ def resolve_schema(schema: Path | None, game_id: str | None, steam_dir: Path | N
     raise SystemExit("schema file not found. Searched:\n" + "\n".join(searched))
 
 
+def find_schema_files(game_id: str | None = None, steam_dir: Path | None = None) -> dict[str, Any]:
+    steam_dirs = [steam_dir] if steam_dir else discover_steam_dirs()
+    matches: list[dict[str, Any]] = []
+    stats_dirs: list[str] = []
+    pattern = f"UserGameStatsSchema_{game_id}.bin" if game_id else "UserGameStatsSchema_*.bin"
+    for base in steam_dirs:
+        if base is None:
+            continue
+        stats_dir = base / "appcache" / "stats"
+        stats_dirs.append(str(stats_dir))
+        if not stats_dir.is_dir():
+            continue
+        for path in sorted(stats_dir.glob(pattern)):
+            match = re.search(r"UserGameStatsSchema_(\d+)\.bin$", path.name)
+            matches.append({
+                "game_id": match.group(1) if match else None,
+                "schema": str(path),
+                "size": path.stat().st_size,
+                "modified_epoch": path.stat().st_mtime,
+            })
+    return {
+        "game_id": game_id,
+        "steam_dirs": [str(p) for p in steam_dirs if p is not None],
+        "stats_dirs": stats_dirs,
+        "match_count": len(matches),
+        "matches": matches,
+    }
+
+
 def copy_source_to_workspace(source: Path, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     dest = out_dir / source.name
@@ -437,11 +550,13 @@ def process_schema(
     roundtrip_path = out_dir / f"{stem}.roundtrip.bin"
     tree_path = out_dir / f"{stem}.tree.json"
     csv_path = out_dir / f"{stem}.achievements.csv"
+    missing_csv_path = out_dir / f"{stem}.{target_language}.missing.csv"
     report_path = out_dir / f"{stem}.report.json"
     roundtrip_path.write_bytes(rebuilt)
     tree_path.write_text(json.dumps([to_json(n) for n in nodes], ensure_ascii=False, indent=2), encoding="utf-8")
     rows = achievement_rows(nodes, target_language)
     export_csv(rows, csv_path)
+    missing_count = export_missing_translation_csv(rows, target_language, missing_csv_path)
     source_ids = {str(r["api_name"]) for r in rows if r.get("api_name")}
     report: dict[str, Any] = {
         "input": str(input_path),
@@ -452,6 +567,8 @@ def process_schema(
         "achievement_count": len(rows),
         "with_existing_target_language": sum(1 for r in rows if r.get(f"{target_language}_name") or r.get(f"{target_language}_description")),
         "achievements_csv": str(csv_path),
+        "missing_target_language_csv": str(missing_csv_path),
+        "missing_target_language_count": missing_count,
         "roundtrip_bin": str(roundtrip_path),
         "tree_json": str(tree_path),
         "report_json": str(report_path),
@@ -459,9 +576,9 @@ def process_schema(
     if translations:
         if data != rebuilt:
             raise SystemExit("source file failed byte-identical roundtrip; refusing to apply translations")
-        translation_map = load_translations(translations, target_language)
-        translation_ids = set(translation_map)
-        changed = apply_translations(nodes, translation_map, target_language)
+        translation_result = load_translations(translations, target_language)
+        translation_ids = set(translation_result.entries)
+        changed = apply_translations(nodes, translation_result.entries, target_language)
         loc = serialize(nodes)
         loc_path = localized_bin or (out_dir / f"{stem}.{target_language}.bin")
         loc_path.parent.mkdir(parents=True, exist_ok=True)
@@ -477,7 +594,8 @@ def process_schema(
             "translations_csv": str(translations),
             "localized_bin": str(loc_path),
             "localized_achievements_csv": str(loc_csv_path),
-            "translation_rows_loaded": len(translation_map),
+            "translation_rows_loaded": len(translation_result.entries),
+            "translation_text_sanitized_count": translation_result.sanitized_count,
             "target_language_nodes_changed": changed,
             "sha256_localized": sha256(loc_data),
             "sha256_localized_roundtrip": sha256(loc_rebuilt),
@@ -519,8 +637,11 @@ def install_localized_file(original: Path, localized: Path, out_dir: Path) -> di
 def version_check_cli(argv: list[str]) -> None:
     ap = argparse.ArgumentParser(description="Check local skill version against the latest GitHub tag.")
     ap.add_argument("--warn-only", action="store_true", help="print the report but return success on mismatch or network failure")
+    ap.add_argument("--max-age-hours", type=float, default=24.0, help="reuse a successful cached GitHub tag check within this many hours")
+    ap.add_argument("--force", action="store_true", help="ignore the cache and query GitHub now")
+    ap.add_argument("--cache-file", type=Path, help="override the version-check cache path")
     args = ap.parse_args(argv)
-    report = build_version_report()
+    report = build_version_report(max_age_hours=args.max_age_hours, force=args.force, cache_file=args.cache_file)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     if args.warn_only:
         return
@@ -541,6 +662,14 @@ def legacy_cli(argv: list[str]) -> None:
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 
+def find_schema_cli(argv: list[str]) -> None:
+    ap = argparse.ArgumentParser(description="Find Steam UserGameStatsSchema_*.bin files from common Steam install locations.")
+    ap.add_argument("--game-id", help="Steam app ID to locate; omit to list all local schema files")
+    ap.add_argument("--steam-dir", type=Path, help="explicit Steam install directory")
+    args = ap.parse_args(argv)
+    print(json.dumps(find_schema_files(args.game_id, args.steam_dir), ensure_ascii=False, indent=2))
+
+
 def workflow_cli(argv: list[str]) -> None:
     ap = argparse.ArgumentParser(description="Automate the README workflow: version preflight, schema discovery, safe copy, export, apply, verify, and optional install.")
     ap.add_argument("--game-id")
@@ -553,10 +682,17 @@ def workflow_cli(argv: list[str]) -> None:
     ap.add_argument("--install", action="store_true", help="back up the original schema and replace it with the verified localized copy")
     ap.add_argument("--strict-no-latin", action="store_true", help="fail if target fields contain Latin words after apply/verify")
     ap.add_argument("--skip-version-check", action="store_true")
+    ap.add_argument("--force-version-check", action="store_true", help="ignore the cached version preflight and query GitHub now")
+    ap.add_argument("--version-max-age-hours", type=float, default=24.0, help="reuse a successful cached version check within this many hours")
+    ap.add_argument("--version-cache-file", type=Path, help="override the version-check cache path")
     ap.add_argument("--require-current-version", action="store_true", help="fail when the local skill version does not match the latest GitHub tag")
     args = ap.parse_args(argv)
 
-    version_report = None if args.skip_version_check else build_version_report()
+    version_report = None if args.skip_version_check else build_version_report(
+        max_age_hours=args.version_max_age_hours,
+        force=args.force_version_check,
+        cache_file=args.version_cache_file,
+    )
     if args.require_current_version and version_report and not version_report.get("versions_match"):
         print(json.dumps({"version": version_report}, ensure_ascii=False, indent=2))
         raise SystemExit("local skill version does not match the latest GitHub tag")
@@ -587,6 +723,8 @@ def workflow_cli(argv: list[str]) -> None:
 def main() -> None:
     if len(sys.argv) > 1 and sys.argv[1] == "version-check":
         version_check_cli(sys.argv[2:])
+    elif len(sys.argv) > 1 and sys.argv[1] == "find-schema":
+        find_schema_cli(sys.argv[2:])
     elif len(sys.argv) > 1 and sys.argv[1] == "workflow":
         workflow_cli(sys.argv[2:])
     else:
