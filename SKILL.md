@@ -32,25 +32,27 @@ Report the local version, latest GitHub tag, whether the result came from cache,
 
 Use `scripts/steam_bkv_tool.py` for deterministic parsing, exporting, applying translations, version checks, and verification.
 
-Find a local Steam schema by game ID:
+Do not run optional automation such as Steam install discovery, schema lookup, batch missing-language translation, direct localized output, or install-back unless the user explicitly asks for that automation. Version preflight is the only automation to run by default.
+
+Optional schema lookup when the user asks Codex to find the local file:
 
 ```bash
 python <skill>/scripts/steam_bkv_tool.py find-schema --game-id 123456
 ```
 
-List all local Steam schema files:
+Optional local schema inventory when the user asks Codex to list available schema files:
 
 ```bash
 python <skill>/scripts/steam_bkv_tool.py find-schema
 ```
 
-Preferred automated workflow by game ID:
+Optional automated workflow when the user asks Codex to automate the mechanical steps:
 
 ```bash
 python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
 ```
 
-This runs the cached skill version preflight, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, exports `*.missing.csv` for achievements missing the target language, writes a report, and leaves the original Steam file untouched.
+This runs the cached skill version preflight, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, exports `*.missing.csv` for achievements missing the target language, writes a report, and leaves the original Steam file untouched. Use it only after the user asks for this level of automation.
 
 Apply a reviewed translation CSV:
 
@@ -88,13 +90,13 @@ Translation CSV accepted columns:
 - Name: `<language>_name`, `target_name`, `translated_name`, `name_zh`, or `schinese_name`
 - Description: `<language>_description`, `target_description`, `translated_description`, `description_zh`, or `schinese_description`
 
-The generated `*.missing.csv` file uses `target_name` and `target_description` columns. Ask AI to batch-fill every row in that file when the user wants all achievements missing the requested language to be translated at once.
+The generated `*.missing.csv` file uses `target_name` and `target_description` columns. Batch-fill every row in that file only when the user asks to translate all achievements missing the requested language at once.
 
 ## Workflow
 
 1. **Establish file scope**
    - Start with the cached version preflight. If using `workflow`, keep its built-in version check enabled unless the user explicitly accepts skipping it.
-   - Use `find-schema --game-id <id>` or `workflow --game-id <id>` to automate Steam install discovery and schema-file lookup.
+   - Use `find-schema --game-id <id>` or `workflow --game-id <id>` only if the user asks Codex to locate files or automate the mechanical workflow. Otherwise, work from the game ID, schema path, target language, and workflow choices the user provides.
    - Identify the source `.bin`, target Steam language code, output directory, and whether the user wants review-first CSV output or direct localized binary output.
    - Treat Steam install/appcache paths as live external files. Work on copies in a workspace or output directory first.
    - If the source file is inside a Git repository, protect unrelated user changes and manage only artifacts created for the localization task.
@@ -106,12 +108,12 @@ The generated `*.missing.csv` file uses `target_name` and `target_description` c
    - For achievement localization field heuristics, consult `PanVena/SteamAchievementLocalizer`, but do not copy its byte-search replacement approach for writing.
 
 3. **Parse and export**
-   - Prefer `steam_bkv_tool.py workflow` when the user provides a game ID or Steam path; use the lower-level command only when the schema file is already scoped.
+   - Use the lower-level export command when the schema file is already scoped. Use `steam_bkv_tool.py workflow` only when the user requests automated lookup/copy/export behavior.
    - Confirm `roundtrip_equal: true` and matching original/roundtrip SHA-256 before touching translations.
    - Use the exported `*.achievements.csv` to inspect IDs, English names, and descriptions.
 
 4. **Collect trusted translations**
-   - For batch missing-language work, use the generated `*.missing.csv`, translate every row that lacks the target language, and write the result to a CSV accepted by the script.
+   - For batch missing-language work, use the generated `*.missing.csv`, translate every row that lacks the target language, and write the result to a CSV accepted by the script only when the user asks for batch translation.
    - Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass.
    - Preserve source provenance in a note, intermediate file, or report when translations come from external references.
    - If translating from scratch, follow the user's glossary, tone, title-casing, item-name, character-name, and terminology preferences.

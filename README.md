@@ -104,13 +104,13 @@ For example, if the game ID is `123456`, look for:
 UserGameStatsSchema_123456.bin
 ```
 
-Codex can also automate this lookup:
+If you explicitly ask Codex to automate this lookup, it can run:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py find-schema --game-id 123456
 ```
 
-To list every local Steam achievement schema file it can find:
+If you ask Codex to list local schema files, it can run:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py find-schema
@@ -142,18 +142,19 @@ You can ask the AI assistant to:
 
 For important files, the review-first CSV workflow is recommended.
 
-The mechanical parts of this flow can be automated. For example, when you know
-the game ID, Codex can search common Steam install locations, copy the live
-schema into the output folder, export the CSV, export a missing-language CSV,
-and run the safety checks:
+If you explicitly ask for workflow automation, Codex can automate the mechanical
+parts of this flow. For example, when you know the game ID, it can search common
+Steam install locations, copy the live schema into the output folder, export the
+CSV, export a missing-language CSV, and run the safety checks:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
 ```
 
 The generated `*.missing.csv` file contains only achievements missing the
-requested target language. Ask Codex to batch-translate every row in that file,
-filling `target_name` and `target_description`, then apply the reviewed CSV.
+requested target language. If you ask Codex to batch-translate all missing
+entries, it can fill `target_name` and `target_description`, then apply the
+reviewed CSV.
 
 After reviewing or editing the CSV, Codex can apply it and create a verified
 localized binary:
