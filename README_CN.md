@@ -2,190 +2,179 @@
 
 # Steam Achievement Localizer Skill
 
-这是一个用于翻译 Steam 本地成就名称和描述的 Codex skill，处理对象是
-`UserGameStatsSchema_*.bin` 文件。它可以帮助 AI 助手读取 Steam 成就 schema、
-整理翻译、并安全写回文件，避免破坏 Binary KeyValues 文件结构。
+当前版本：`v0.1.2`
 
-你不需要理解 Steam 的二进制格式。大多数情况下，只要提供游戏 ID、schema 文件
-路径、目标语言，以及你的翻译要求或参考资料即可。
+这是一个用于翻译 Steam 本地成就名称和描述的 Codex skill，处理
+`UserGameStatsSchema_*.bin` 文件。
+
+你只需要提供游戏 ID 或 schema 文件路径、目标语言、以及翻译要求。这个 skill 会
+读取文件，导出成就文本供你检查，再把确认后的翻译写回指定语言字段，并在替换
+Steam 文件前做检查。
 
 ## 安装
 
-### 方式一：让 Codex 安装
+### 让 Codex 安装
 
 ```text
 Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
 ```
 
-安装后这样调用：
+安装后这样使用：
 
 ```text
 使用 $steam-achievement-localizer 翻译这个 Steam 成就 schema。
 ```
 
-### 方式二：手动安装
+### 手动安装
 
 从 GitHub Releases 下载 `steam-achievement-localizer.zip`，解压到 Codex skills
-目录：
+文件夹：
 
 ```powershell
 Expand-Archive .\steam-achievement-localizer.zip -DestinationPath "$env:USERPROFILE\.codex\skills" -Force
 ```
 
-安装后的路径应类似：
+安装后的文件夹里应包含：
 
 ```text
-%USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
+steam-achievement-localizer\SKILL.md
 ```
 
 ## 版本检查
 
-Skill 内包含本地 `VERSION` 文件。每次开始使用时，先让 Codex 检查本地版本是否和
-GitHub 最新 tag 一致：
-
-```text
-使用 $steam-achievement-localizer，并先检查 skill 版本。
-```
-
-底层命令是：
+每次开始工作前，skill 会先检查本地版本。它也会检查 GitHub 最新 tag，但默认会
+缓存 24 小时，避免每次都访问 GitHub。
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py version-check --warn-only
 ```
 
-如果版本不一致，处理重要文件前建议先从最新 GitHub Release 更新 skill。
+只有在你想立刻刷新 GitHub 检查时，才需要加 `--force`。
 
-## 如何使用此 Skill 翻译成就
+如果版本不一致，建议先更新 skill，再处理重要文件。
 
-### 1. 确认 Steam 游戏 ID
+## 基本用法
 
-打开你要翻译的游戏商店页面。地址栏通常是这种格式：
+### 1. 找到 Steam 游戏 ID
+
+打开游戏的 Steam 商店页面，地址通常类似：
 
 ```text
 https://store.steampowered.com/app/<游戏ID>/<游戏名>/
 ```
 
-例如 `https://store.steampowered.com/app/123456/Game_Name/` 中，游戏 ID 就是
-`123456`。
-
-你也可以只告诉 AI 助手游戏名，让它自己查 ID；但游戏名可能重复或相似，因此更
-推荐你从商店页面地址栏手动确认。
-
-### 2. 找到本地成就 schema 文件
-
-Steam 在 Windows 上的默认位置通常是：
+例如下面这个地址里，游戏 ID 是 `123456`：
 
 ```text
-C:\Program Files (x86)\Steam\appcache\stats
+https://store.steampowered.com/app/123456/Game_Name/
 ```
 
-如果你的 Steam 安装在其他位置，请进入：
+### 2. 找到成就文件
+
+Steam 通常把这类文件放在：
 
 ```text
-<你的 Steam 安装位置>\appcache\stats
+<Steam 文件夹>\appcache\stats
 ```
 
-在这个文件夹里找到：
+文件名是：
 
 ```text
 UserGameStatsSchema_<游戏ID>.bin
 ```
 
-例如游戏 ID 是 `123456`，就找：
+如果游戏 ID 是 `123456`，文件名就是：
 
 ```text
 UserGameStatsSchema_123456.bin
 ```
 
-你也可以要求 AI 助手根据游戏名或你刚刚查询到的游戏 ID 来自动定位目标文件位置，但这往往不可靠。
+如果你要求 Codex 自动查找文件，它可以运行：
 
-### 3. 把文件路径和翻译要求发给 AI 助手
-
-你可以直接粘贴完整路径，并说明目标语言和翻译要求。例如：
-
-```text
-使用 $steam-achievement-localizer 把这个文件翻译成简体中文：
-C:\Program Files (x86)\Steam\appcache\stats\UserGameStatsSchema_123456.bin
-
-请保留官方物品名，整体使用自然的中文成就文案，描述尽量简洁。
+```powershell
+python <skill>\scripts\steam_bkv_tool.py find-schema --game-id 123456
 ```
 
-如果有参考资料，也可以一起提供，例如官方翻译、术语表、Wiki 文本、已有本地化
-文件、角色名/道具名对照表，或你希望采用的语气和风格。
+这个查找是可选的。只有你要求自动查找时，Codex 才应该使用它。
 
-### 4. 选择翻译流程
+### 3. 提出翻译请求
 
-你可以让 AI 助手：
+示例：
 
-- 翻译完成后直接生成可替换的本地化文件；
-- 先生成一份 CSV 翻译对照表，等你确认无误后再写回文件；
-- 使用你自己修改后的 CSV 作为最终翻译来源。
+```text
+使用 $steam-achievement-localizer 翻译这个 Steam 成就文件。
 
-如果文件比较重要，推荐先生成 CSV 对照表进行审核，再让 AI 写回。
+游戏 ID：123456
+schema 文件：<UserGameStatsSchema_123456.bin 的路径>
+目标语言：schinese
+流程：先导出 CSV 给我检查，我确认后再写回
+翻译要求：保留官方物品名，使用简洁自然的中文成就文案
+```
 
-这个流程里的机械步骤可以自动化。例如已知游戏 ID 时，Codex 可以搜索常见 Steam
-安装位置，把 live schema 复制到输出目录，导出 CSV，并执行安全检查：
+你也可以提供术语表、官方翻译文本、Wiki 文本、已有翻译文件或风格说明。
+
+## 可选流程
+
+你可以要求 Codex：
+
+- 先导出 CSV 给你检查；
+- 使用你改好的 CSV 生成翻译后的副本；
+- 只翻译缺少目标语言的成就；
+- 自动查找文件并导出 CSV；
+- 在你明确确认后，把翻译后的文件安装回 Steam。
+
+默认只会自动做版本检查。其他自动化步骤必须在你要求后才执行。
+
+### 可选：自动导出
+
+如果你明确要求自动化，Codex 可以查找 schema 文件，把它复制到输出文件夹，导出
+CSV，导出缺失语言 CSV，并运行检查：
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
 ```
 
-审核或编辑 CSV 后，Codex 可以应用翻译并生成已验证的本地化二进制文件：
+`*.missing.csv` 只列出还没有目标语言的成就。如果你要求批量翻译缺失项，Codex 可以
+为每一行填写 `target_name` 和 `target_description`。
+
+### 应用检查后的 CSV
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --strict-no-latin
 ```
 
-如果你明确要求安装回 Steam，这个 workflow 会先备份原文件再替换：
+翻译文本应保持简单、单行。不要包含制表符、换行、原始转义符、NUL 字节或控制
+字符。脚本会在写入前移除不安全字符，并报告有多少字段被清理过。
+
+### 安装回 Steam
+
+只有在你准备替换本地 Steam 文件时再执行：
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --install
 ```
 
-### 5. 谨慎替换 Steam 原文件
+这个流程会先备份原文件，再检查安装后的文件是否和翻译副本一致。
 
-替换前请先备份原始 `UserGameStatsSchema_<游戏ID>.bin` 文件。确认本地化文件已经
-生成并通过验证后，再按你的需求替换原文件。
+## Skill 会检查什么
 
-## 可直接复制的提示词模板
-
-```text
-使用 $steam-achievement-localizer 翻译 Steam 成就。
-
-游戏 ID：<游戏ID>
-schema 文件：<UserGameStatsSchema_<游戏ID>.bin 的完整路径>
-目标语言：<schinese / tchinese / japanese / koreana / 等>
-流程：先导出 CSV 给我审核，我确认后再写回
-翻译要求：<术语表、风格、官方名称、参考资料或特殊规则>
-```
-
-## Skill 会在后台做什么
-
-- 读取 Steam Binary KeyValues schema，并避免改动无关数据。
-- 导出成就名称和描述，方便翻译或人工审核。
-- 将翻译写入指定的 Steam 语言字段，例如 `schinese`、`tchinese`、`japanese`、
-  `koreana`。
-- 写入后再次验证文件，确认本地化后的 schema 仍可被正确解析。
+- 原始文件能否安全读取并原样写回。
+- 翻译后的副本能否安全读取并原样写回。
+- 成就是按稳定 ID 匹配，而不是按行号匹配。
+- 缺失、多余或空白的翻译行会被报告。
+- 翻译文本中的不安全字符会在写入前移除。
 
 ## 致谢
 
-本项目在开发过程中参考了以下开源项目对 Steam 成就 Schema、Binary KeyValues
-格式及本地化处理方式的研究与实现：
+本项目参考了以下公开项目：
 
 - [achievement_reconstructor](https://github.com/CommitteeOfZero/achievement_reconstructor)
-  为 Steam `UserGameStatsSchema_*.bin` 的解析、重建及可编辑化提供了重要参考。
-
 - [SamRewritten](https://github.com/PaulCombal/SamRewritten)
-  其 Binary KeyValues 解析实现帮助确认了数据类型编号、递归结构和字符串编码方式。
-
 - [SteamAchievementLocalizer](https://github.com/PanVena/SteamAchievementLocalizer)
-  为 Steam 成就多语言字段的识别、导入导出和本地化工作流提供了参考。
 
-感谢这些项目的作者和贡献者对 Steam 数据格式进行研究并公开成果，使本项目得以在
-已有社区经验的基础上完成独立实现。
+感谢这些项目的作者和贡献者分享 Steam 成就文件和本地化流程相关研究。
 
-本项目未声称拥有上述项目的代码或研究成果。各项目的版权和许可证归其原作者所有，
-使用相关项目时请遵守各自仓库中的许可证条款。
+本项目是独立实现。使用上述项目内容时，请遵守各项目的许可证。
 
 ## 许可证
 

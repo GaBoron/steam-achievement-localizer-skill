@@ -2,18 +2,19 @@ English | [简体中文](README_CN.md)
 
 # Steam Achievement Localizer Skill
 
-A Codex skill for translating Steam achievement names and descriptions in local
-`UserGameStatsSchema_*.bin` files. It helps an AI assistant read the Steam
-achievement schema, prepare translations, and write them back safely without
-breaking the Binary KeyValues file structure.
+Current version: `v0.1.2`
 
-You do not need to understand Steam's binary format to use it. In most cases,
-you only need to provide the game ID, the schema file path, the target language,
-and any translation preferences or reference material.
+This is a Codex skill for translating Steam achievement names and descriptions in
+local `UserGameStatsSchema_*.bin` files.
+
+You only need to provide the game ID or schema file path, the target language,
+and your translation preferences. The skill reads the file, exports achievement
+text for review, writes the selected language back, and checks the result before
+you replace anything in Steam.
 
 ## Install
 
-### Option 1: Ask Codex to install it
+### Ask Codex to install it
 
 ```text
 Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
@@ -25,208 +26,166 @@ Then ask Codex to use it:
 Use $steam-achievement-localizer to translate this Steam achievement schema.
 ```
 
-### Option 2: Install manually
+### Install manually
 
 Download `steam-achievement-localizer.zip` from GitHub Releases and extract it
-to your Codex skills directory:
+to your Codex skills folder:
 
 ```powershell
 Expand-Archive .\steam-achievement-localizer.zip -DestinationPath "$env:USERPROFILE\.codex\skills" -Force
 ```
 
-The installed path should look like:
+The installed folder should contain:
 
 ```text
-%USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
+steam-achievement-localizer\SKILL.md
 ```
 
 ## Version Check
 
-The skill includes a local `VERSION` file. At the start of each run, ask Codex
-to run the version preflight. It checks the local version every time, but reuses
-a successful GitHub tag result for 24 hours by default:
-
-```text
-Use $steam-achievement-localizer and check the skill version first.
-```
-
-The underlying command is:
+The skill checks its local version before work starts. It also checks the latest
+GitHub tag, but caches that result for 24 hours so it does not contact GitHub on
+every run.
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py version-check --warn-only
 ```
 
-Use `--force` when you want to refresh the GitHub tag check immediately.
+Use `--force` only when you want a fresh GitHub check immediately.
 
-If the versions do not match, update the skill from the latest GitHub Release
-before localizing important files.
+If the versions do not match, update the skill before editing important files.
 
-## How to Translate Achievements with This Skill
+## Basic Use
 
 ### 1. Find the Steam game ID
 
-Open the Steam store page for the game you want to translate. The address usually
-looks like this:
+Open the Steam store page for the game. The URL usually looks like this:
 
 ```text
 https://store.steampowered.com/app/<game_id>/<game_name>/
 ```
 
-For example, in a URL like `https://store.steampowered.com/app/123456/Game_Name/`,
-the game ID is `123456`.
-
-You can also tell the AI assistant the game name and ask it to look up the ID,
-but checking the store URL yourself is safer because game names can be ambiguous.
-
-### 2. Find the local achievement schema file
-
-Steam normally stores local achievement schema files here on Windows:
+In this example, the game ID is `123456`:
 
 ```text
-C:\Program Files (x86)\Steam\appcache\stats
+https://store.steampowered.com/app/123456/Game_Name/
 ```
 
-If Steam is installed somewhere else, use this folder instead:
+### 2. Find the achievement file
+
+Steam usually stores these files in:
 
 ```text
-<your Steam install folder>\appcache\stats
+<Steam folder>\appcache\stats
 ```
 
-Inside that folder, find the file named:
+The file name is:
 
 ```text
 UserGameStatsSchema_<game_id>.bin
 ```
 
-For example, if the game ID is `123456`, look for:
+For game ID `123456`, the file is:
 
 ```text
 UserGameStatsSchema_123456.bin
 ```
 
-If you explicitly ask Codex to automate this lookup, it can run:
+If you ask Codex to find the file for you, it can run:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py find-schema --game-id 123456
 ```
 
-If you ask Codex to list local schema files, it can run:
+This lookup is optional. Codex should use it only when you ask for automatic
+file lookup.
 
-```powershell
-python <skill>\scripts\steam_bkv_tool.py find-schema
-```
+### 3. Ask for the translation
 
-### 3. Give the file path and translation request to the AI assistant
-
-You can paste the full file path and describe what you want. Example:
+Example:
 
 ```text
-Use $steam-achievement-localizer to translate this file into Simplified Chinese:
-C:\Program Files (x86)\Steam\appcache\stats\UserGameStatsSchema_123456.bin
+Use $steam-achievement-localizer to translate this Steam achievement file.
 
-Please keep official item names unchanged, use natural achievement-style Chinese,
-and make the descriptions concise.
+Game ID: 123456
+Schema file: <path to UserGameStatsSchema_123456.bin>
+Target language: schinese
+Workflow: export a CSV first, then apply it after I confirm
+Translation notes: keep official item names unchanged and use short, natural Chinese
 ```
 
-You may also provide reference material, such as official translations, glossary
-terms, wiki text, previous localization files, or a preferred tone/style.
+You can also provide a glossary, official translation text, wiki text, previous
+translation files, or style notes.
 
-### 4. Choose a workflow
+## Workflow Choices
 
-You can ask the AI assistant to:
+You can ask Codex to:
 
-- translate and directly create a localized replacement file;
-- first generate a CSV translation table for your review, then apply it after you
-  confirm it is correct;
-- use your own edited CSV as the final translation source.
+- export a CSV for review first;
+- apply your edited CSV and create a translated copy;
+- translate only achievements that are missing the target language;
+- automate file lookup and CSV export;
+- install the translated file back into Steam after you explicitly confirm.
 
-For important files, the review-first CSV workflow is recommended.
+Only the version check runs by default. Other automation runs only when you ask
+for it.
 
-If you explicitly ask for workflow automation, Codex can automate the mechanical
-parts of this flow. For example, when you know the game ID, it can search common
-Steam install locations, copy the live schema into the output folder, export the
-CSV, export a missing-language CSV, and run the safety checks:
+### Optional automated export
+
+When you explicitly ask for automation, Codex can search for the schema file,
+copy it to an output folder, export a CSV, export a missing-language CSV, and
+run safety checks:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
 ```
 
-The generated `*.missing.csv` file contains only achievements missing the
-requested target language. If you ask Codex to batch-translate all missing
-entries, it can fill `target_name` and `target_description`, then apply the
-reviewed CSV.
+The `*.missing.csv` file lists achievements that do not yet have the requested
+language. If you ask Codex to batch-translate missing entries, it can fill
+`target_name` and `target_description` for each row.
 
-After reviewing or editing the CSV, Codex can apply it and create a verified
-localized binary:
+### Apply a reviewed CSV
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --strict-no-latin
 ```
 
-Translation text should be plain single-line text. Do not include NUL bytes,
-ASCII control characters, raw escape sequences, tabs, or line breaks. The script
-sanitizes these before writing and reports how many fields were changed.
+Keep translation text plain and single-line. Avoid tabs, line breaks, raw escape
+sequences, NUL bytes, and control characters. The script removes unsafe
+characters before writing and reports how many fields were changed.
 
-If you explicitly ask to install the result back into Steam, the workflow can
-back up the original file first and then replace it:
+### Install back into Steam
+
+Only do this when you are ready to replace the local Steam file:
 
 ```powershell
 python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --install
 ```
 
-### 5. Replace the Steam file carefully
+The workflow backs up the original file first and then checks that the installed
+file matches the translated copy.
 
-Before replacing anything, back up the original
-`UserGameStatsSchema_<game_id>.bin` file. After the localized file is generated
-and verified, you can replace the original file with the localized copy if that
-is the workflow you requested.
+## What the Skill Checks
 
-## Useful Prompt Template
-
-```text
-Use $steam-achievement-localizer to translate Steam achievements.
-
-Game ID: <game_id>
-Schema file: <full path to UserGameStatsSchema_<game_id>.bin>
-Target language: <schinese / tchinese / japanese / koreana / etc.>
-Workflow: first export a CSV for review, then apply it after I confirm
-Translation notes: <glossary, style, official names, references, or special rules>
-```
-
-## What the Skill Does Behind the Scenes
-
-- Reads the Steam Binary KeyValues schema without changing unrelated data.
-- Exports achievement names and descriptions for translation.
-- Applies translations to the requested Steam language field, such as
-  `schinese`, `tchinese`, `japanese`, or `koreana`.
-- Verifies the file after writing so the localized schema can still be parsed.
+- The original file can be read and written back without changing its bytes.
+- The translated copy can also be read and written back safely.
+- Achievement IDs are matched by stable IDs, not by row order.
+- Missing, extra, or empty translation rows are reported.
+- Unsafe characters in translation text are removed before writing.
 
 ## Acknowledgements
 
-This project was developed with reference to the following open-source projects
-and their research or implementations related to Steam achievement schemas,
-Binary KeyValues, and localization workflows:
+This project was built with public references from:
 
 - [achievement_reconstructor](https://github.com/CommitteeOfZero/achievement_reconstructor)
-  Provided important reference material for parsing, rebuilding, and editing
-  Steam `UserGameStatsSchema_*.bin` files.
-
 - [SamRewritten](https://github.com/PaulCombal/SamRewritten)
-  Its Binary KeyValues parsing implementation helped confirm data type IDs,
-  recursive structure handling, and string encoding behavior.
-
 - [SteamAchievementLocalizer](https://github.com/PanVena/SteamAchievementLocalizer)
-  Provided reference material for identifying multilingual Steam achievement
-  fields, import/export behavior, and localization workflow design.
 
-Thanks to the authors and contributors of these projects for researching Steam
-data formats and sharing their work publicly. This project was completed as an
-independent implementation built on existing community knowledge.
+Thanks to the authors and contributors of those projects for sharing research
+about Steam achievement files and localization workflows.
 
-This project does not claim ownership of the code or research results of the
-projects listed above. Copyrights and licenses for those projects belong to their
-respective authors. Please follow each repository's license terms when using
-those projects.
+This project is an independent implementation. Please follow each referenced
+project's license terms when using their work.
 
 ## License
 
