@@ -40,6 +40,24 @@ The installed path should look like:
 %USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
 ```
 
+## Version Check
+
+The skill includes a local `VERSION` file. At the start of each run, ask Codex
+to check whether the installed version matches the latest GitHub tag:
+
+```text
+Use $steam-achievement-localizer and check the skill version first.
+```
+
+The underlying command is:
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py version-check --warn-only
+```
+
+If the versions do not match, update the skill from the latest GitHub Release
+before localizing important files.
+
 ## How to Translate Achievements with This Skill
 
 ### 1. Find the Steam game ID
@@ -108,6 +126,28 @@ You can ask the AI assistant to:
 - use your own edited CSV as the final translation source.
 
 For important files, the review-first CSV workflow is recommended.
+
+The mechanical parts of this flow can be automated. For example, when you know
+the game ID, Codex can search common Steam install locations, copy the live
+schema into the output folder, export the CSV, and run the safety checks:
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
+```
+
+After reviewing or editing the CSV, Codex can apply it and create a verified
+localized binary:
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --strict-no-latin
+```
+
+If you explicitly ask to install the result back into Steam, the workflow can
+back up the original file first and then replace it:
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --install
+```
 
 ### 5. Replace the Steam file carefully
 

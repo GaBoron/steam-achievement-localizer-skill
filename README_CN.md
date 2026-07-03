@@ -38,6 +38,23 @@ Expand-Archive .\steam-achievement-localizer.zip -DestinationPath "$env:USERPROF
 %USERPROFILE%\.codex\skills\steam-achievement-localizer\SKILL.md
 ```
 
+## 版本检查
+
+Skill 内包含本地 `VERSION` 文件。每次开始使用时，先让 Codex 检查本地版本是否和
+GitHub 最新 tag 一致：
+
+```text
+使用 $steam-achievement-localizer，并先检查 skill 版本。
+```
+
+底层命令是：
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py version-check --warn-only
+```
+
+如果版本不一致，处理重要文件前建议先从最新 GitHub Release 更新 skill。
+
 ## 如何使用此 Skill 翻译成就
 
 ### 1. 确认 Steam 游戏 ID
@@ -105,6 +122,25 @@ C:\Program Files (x86)\Steam\appcache\stats\UserGameStatsSchema_123456.bin
 - 使用你自己修改后的 CSV 作为最终翻译来源。
 
 如果文件比较重要，推荐先生成 CSV 对照表进行审核，再让 AI 写回。
+
+这个流程里的机械步骤可以自动化。例如已知游戏 ID 时，Codex 可以搜索常见 Steam
+安装位置，把 live schema 复制到输出目录，导出 CSV，并执行安全检查：
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
+```
+
+审核或编辑 CSV 后，Codex 可以应用翻译并生成已验证的本地化二进制文件：
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --strict-no-latin
+```
+
+如果你明确要求安装回 Steam，这个 workflow 会先备份原文件再替换：
+
+```powershell
+python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs\translations.csv --install
+```
 
 ### 5. 谨慎替换 Steam 原文件
 

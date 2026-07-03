@@ -7,6 +7,16 @@ description: Localize Steam UserGameStatsSchema_*.bin achievement schema files b
 
 Use this skill to translate Steam achievement schema files such as `UserGameStatsSchema_123456.bin` without corrupting Steam Binary KeyValues.
 
+## Version Preflight
+
+Before every localization task, check whether the installed skill version matches the latest GitHub tag:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py version-check --warn-only
+```
+
+Report the local version, the latest GitHub tag, and whether they match. If the versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
+
 ## Core Rules
 
 - Do not guess the binary format. Treat it as Steam Binary KeyValues with type bytes: `0` object/begin, `1` UTF-8 string, `2` int32, `3` float32, `4` pointer/uint32, `5` widestring unsupported, `6` color/uint32, `7` uint64, `8` end.
@@ -18,7 +28,27 @@ Use this skill to translate Steam achievement schema files such as `UserGameStat
 
 ## Script
 
-Use `scripts/steam_bkv_tool.py` for deterministic parsing, exporting, applying translations, and verification.
+Use `scripts/steam_bkv_tool.py` for deterministic parsing, exporting, applying translations, version checks, and verification.
+
+Preferred automated workflow by game ID:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
+```
+
+This checks the skill version, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, writes a report, and leaves the original Steam file untouched.
+
+Apply a reviewed translation CSV:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs/translations.csv --strict-no-latin
+```
+
+Install the verified localized copy only when the user explicitly asks:
+
+```bash
+python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs/translations.csv --install
+```
 
 Basic export and roundtrip check:
 
@@ -47,6 +77,7 @@ Translation CSV accepted columns:
 ## Workflow
 
 1. **Establish file scope**
+   - Start with the version preflight. If using `workflow`, keep its built-in version check enabled unless the user explicitly accepts skipping it.
    - Identify the source `.bin`, target Steam language code, output directory, and whether the user wants review-first CSV output or direct localized binary output.
    - Treat Steam install/appcache paths as live external files. Work on copies in a workspace or output directory first.
    - If the source file is inside a Git repository, protect unrelated user changes and manage only artifacts created for the localization task.
@@ -58,7 +89,7 @@ Translation CSV accepted columns:
    - For achievement localization field heuristics, consult `PanVena/SteamAchievementLocalizer`, but do not copy its byte-search replacement approach for writing.
 
 3. **Parse and export**
-   - Run `steam_bkv_tool.py` on the real `.bin` file.
+   - Prefer `steam_bkv_tool.py workflow` when the user provides a game ID or Steam path; use the lower-level command only when the schema file is already scoped.
    - Confirm `roundtrip_equal: true` and matching original/roundtrip SHA-256 before touching translations.
    - Use the exported `*.achievements.csv` to inspect IDs, English names, and descriptions.
 
@@ -86,15 +117,16 @@ Translation CSV accepted columns:
    - Check for suspicious source-language residue, empty target fields, missing IDs, and unexpected extra IDs.
 
 8. **Install only on request**
-   - If the user asks to put the file back, copy the original Steam file to a workspace/output backup first.
-   - Copy the localized file to the original folder with the original filename.
-   - Re-read the installed file, compare SHA-256 to the localized copy, and parse it once more.
+   - Use `workflow --install` only if the user asks to put the file back.
+   - Confirm the report shows a backup path and `installed_matches_localized: true`.
+   - Re-read or verify the installed file if the user needs an extra installation check.
 
 ## Completion Report
 
 Report these facts at the end:
 
 - Original file path and whether it was overwritten.
+- Version preflight result: local version, latest GitHub tag, and whether they match.
 - Backup path if installed.
 - Original SHA-256 and localized SHA-256.
 - Roundtrip byte equality for original and localized copy.
