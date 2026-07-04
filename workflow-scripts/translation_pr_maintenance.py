@@ -141,7 +141,11 @@ def commit_and_push_submission(branch: str, issue_number: int) -> bool:
     if run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
         return False
     run(["git", "commit", "-m", f"data: refresh achievement translations from issue {issue_number}"])
-    run(["git", "push", "--force-with-lease", "--set-upstream", "origin", branch])
+    run(["git", "fetch", "origin", branch], check=False)
+    push = run(["git", "push", "--force-with-lease", "--set-upstream", "origin", branch], check=False)
+    if push.returncode != 0:
+        run(["git", "fetch", "origin", branch], check=False)
+        run(["git", "push", "--force-with-lease", "--set-upstream", "origin", branch])
     return True
 
 
