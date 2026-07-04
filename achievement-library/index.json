@@ -1,5 +1,18 @@
 {
   "version": 1,
   "description": "Community-submitted Steam achievement schema translations. Entries are added through reviewed pull requests generated from translation-contribution issues.",
-  "entries": []
+  "entries": [
+    {
+      "game_name": "God of War/战神4",
+      "game_id": "1593500",
+      "store_url": "https://store.steampowered.com/app/1593500/God_of_War/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/1593500/UserGameStatsSchema_1593500.bin",
+      "achievement_count": 37,
+      "sha256": "e498f22feb00f798be3361d1ddcfb6d1bf19ddae5d09fd1d8b92483df43b639d",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/3"
+    }
+  ]
 }
