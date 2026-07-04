@@ -3,6 +3,19 @@
   "description": "Community-submitted Steam achievement schema translations. Entries are added through reviewed pull requests generated from translation-contribution issues.",
   "entries": [
     {
+      "game_name": "Batman: Arkham Asylum Game of the Year Edition",
+      "game_id": "35140",
+      "store_url": "https://store.steampowered.com/app/35140/Batman_Arkham_Asylum_Game_of_the_Year_Edition/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/35140/UserGameStatsSchema_35140.bin",
+      "achievement_count": 47,
+      "sha256": "0be2f417c6d71a16c1d77fd718f988370b5ec3843e0ed4daddbe8872a0e52b20",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/33",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "Batman: Arkham City Game - of the Year Edition",
       "game_id": "200260",
       "store_url": "https://store.steampowered.com/app/200260/Batman_Arkham_City__Game_of_the_Year_Edition/",
