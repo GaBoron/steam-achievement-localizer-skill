@@ -32,7 +32,7 @@ upload the matching
 `UserGameStatsSchema_<game_id>.bin` file.
 The submission bot checks that the issue game ID, store URL, file name, Steam
 Binary KeyValues format, and selected language fields match. If first review
-passes, it opens a pull request with the updated index, uploaded schema file,
+passes, it opens a pull request with the uploaded schema file,
 and a review table of every achievement ID with each submitted language's name
 and description.
 
