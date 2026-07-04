@@ -176,17 +176,36 @@ def load_index() -> dict[str, Any]:
 
 def write_index(index: dict[str, Any]) -> None:
     INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+    index["entries"] = sort_entries(index.get("entries", []))
     INDEX_PATH.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def pinyin_sort_key(value: str) -> tuple[bytes, str]:
+    normalized = value.strip().casefold()
+    return normalized.encode("gb18030", errors="ignore"), normalized
+
+
+def entry_sort_key(entry: dict[str, Any]) -> tuple[bytes, str, int]:
+    game_id = str(entry.get("game_id") or "0")
+    try:
+        numeric_id = int(game_id)
+    except ValueError:
+        numeric_id = 0
+    return (*pinyin_sort_key(str(entry.get("game_name") or "")), numeric_id)
+
+
+def sort_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(entries, key=entry_sort_key)
+
+
 def write_human_index(index: dict[str, Any]) -> None:
-    entries = sorted(index.get("entries", []), key=lambda item: int(item.get("game_id", 0)))
+    entries = sort_entries(index.get("entries", []))
     zh_lines = [
         "# 社区成就翻译库",
         "",
         "简体中文 | [English](README_EN.md)",
         "",
-        "查询某个游戏是否已经投稿时，优先查看本页。你可以直接用浏览器搜索 Steam app ID、游戏名或语言代码。",
+        "查询某个游戏是否已经投稿时，优先查看本页。列表按游戏名拼音或字母排序，你可以直接用浏览器搜索 Steam app ID、游戏名、贡献者或语言代码。",
         "",
         "## 游戏列表",
         "",
@@ -196,29 +215,31 @@ def write_human_index(index: dict[str, Any]) -> None:
         "",
         "[简体中文](README.md) | English",
         "",
-        "Browse this page first when checking whether a game has already been submitted. Use your browser search on this page for the Steam app ID, game name, or language code.",
+        "Browse this page first when checking whether a game has already been submitted. Games are sorted by game name using pinyin or alphabetical order. Use your browser search on this page for the Steam app ID, game name, contributor, or language code.",
         "",
         "## Games",
         "",
     ]
     if entries:
         zh_lines.extend([
-            "| Steam app ID | 游戏 | 支持语言 | 成就数 | 成就文件 | 商店 |",
-            "| --- | --- | --- | ---: | --- | --- |",
+            "| Steam app ID | 游戏 | 贡献者 | 支持语言 | 成就数 | 成就文件 | 商店 |",
+            "| --- | --- | --- | --- | ---: | --- | --- |",
         ])
         en_lines.extend([
-            "| Steam app ID | Game | Languages | Achievements | Schema file | Store |",
-            "| --- | --- | --- | ---: | --- | --- |",
+            "| Steam app ID | Game | Contributor | Languages | Achievements | Schema file | Store |",
+            "| --- | --- | --- | --- | ---: | --- | --- |",
         ])
         for entry in entries:
             game_id = str(entry.get("game_id", ""))
             game_name = escape_table(str(entry.get("game_name", "")))
+            contributor = escape_table(str(entry.get("contributor_id", "")))
+            contributor_text = f"@{contributor}" if contributor else ""
             languages = escape_table(", ".join(entry.get("languages", [])))
             count = str(entry.get("achievement_count", ""))
             schema_file = str(entry.get("schema_file", ""))
             schema_link = schema_file.removeprefix("achievement-library/")
             store_url = str(entry.get("store_url", ""))
-            row = f"| `{game_id}` | {game_name} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |"
+            row = f"| `{game_id}` | {game_name} | {contributor_text} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |"
             zh_lines.append(row)
             en_lines.append(row)
     else:
@@ -381,6 +402,7 @@ def force_warning(message: str) -> str:
 def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
+    contributor_id = str((issue.get("user") or {}).get("login") or "")
     fields = parse_issue_form(issue.get("body") or "")
     problems: list[ReviewProblem] = []
     warnings: list[str] = []
@@ -497,10 +519,11 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         "achievement_count": len(rows),
         "sha256": sha256(data),
         "source_issue": issue.get("html_url"),
+        "contributor_id": contributor_id,
     }
     entries = [item for item in index.get("entries", []) if str(item.get("game_id")) != game_id]
     entries.append(entry)
-    index["entries"] = sorted(entries, key=lambda item: int(item.get("game_id", 0)))
+    index["entries"] = sort_entries(entries)
     write_index(index)
     write_human_index(index)
 
@@ -549,6 +572,8 @@ def build_pr_body(
     language_summary = ", ".join(languages)
     coverage_lines = "\n".join(f"- `{language}`: {count}/{entry['achievement_count']} achievements" for language, count in coverage.items())
     table = build_review_table(nodes, languages)
+    contributor_id = str(entry.get("contributor_id") or "")
+    contributor_line = f"- Contributor: @{contributor_id}\n" if contributor_id else ""
     warning_section = ""
     if warnings or force_review:
         warning_lines = "\n".join(f"- {escape_table(item)}" for item in warnings) if warnings else "- No warning details were recorded."
@@ -564,11 +589,11 @@ def build_pr_body(
 - Game name: {entry['game_name']}
 - Steam app ID: `{entry['game_id']}`
 - Steam store URL: {entry['store_url']}
+{contributor_line}- Source issue: {issue_url}
 - Supported languages: {language_summary}
 - Achievement count: {entry['achievement_count']}
 - Schema file: `{entry['schema_file']}`
 - SHA-256: `{entry['sha256']}`
-- Source issue: {issue_url}
 
 ## Language Coverage
 

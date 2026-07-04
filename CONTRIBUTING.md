@@ -40,6 +40,8 @@ Open the English or Chinese translation contribution issue template and attach t
 
 The generated pull request contains the updated library index, the submitted schema file, and a review table listing every achievement ID with each submitted language's achievement name and description. A maintainer still performs final review before merge.
 
+The pull request is opened by GitHub Actions so contributors cannot directly change the generated branch, submitted file, or PR description. The PR body and bot PR comments mention the original contributor so they can follow the PR without receiving duplicate issue comments.
+
 If the bot finds a ZIP name, schema file name, or schema file content problem, it leaves the issue open and explains what failed. Translation contribution issue titles and bodies are frozen after submission, so contributors cannot edit submitted fields, but comments remain open. Attach the corrected ZIP in a new comment and write:
 
 ```text
@@ -47,6 +49,8 @@ If the bot finds a ZIP name, schema file name, or schema file content problem, i
 ```
 
 The bot will rerun the file checks from that replacement ZIP link. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
+
+After a review PR exists, the original contributor or a maintainer can also comment the same `/update <attachment link>` command on the PR. If validation passes, the bot refreshes the PR branch and regenerates the PR description automatically.
 
 Admins can comment:
 

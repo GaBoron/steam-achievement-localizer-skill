@@ -22,6 +22,9 @@ LIBRARY_PATHS = [
 ]
 THANKS_MARKER = "<!-- sal-merged-thanks -->"
 REFRESH_MARKER = "<!-- sal-pr-refreshed -->"
+UPDATE_MARKER = "<!-- sal-pr-update -->"
+BOT_USERS = {"github-actions[bot]"}
+MAINTAINER_PERMISSIONS = {"admin", "maintain"}
 
 
 def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -35,6 +38,7 @@ def github_request(
     path: str,
     payload: dict[str, Any] | None = None,
     allow_404: bool = False,
+    allow_422: bool = False,
 ) -> Any:
     data = None
     headers = {
@@ -54,8 +58,29 @@ def github_request(
     except urllib.error.HTTPError as exc:
         if allow_404 and exc.code == 404:
             return None
+        if allow_422 and exc.code == 422:
+            return None
         detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"GitHub API {method} {path} failed with HTTP {exc.code}: {detail}") from exc
+
+
+def permission_for(repo: str, token: str, actor: str) -> str:
+    encoded = urllib.parse.quote(actor, safe="")
+    data = github_request("GET", repo, token, f"/collaborators/{encoded}/permission", allow_404=True)
+    if not data:
+        return "none"
+    return str(data.get("permission") or "none")
+
+
+def is_maintainer(repo: str, token: str, actor: str) -> bool:
+    if actor in BOT_USERS:
+        return True
+    return permission_for(repo, token, actor) in MAINTAINER_PERMISSIONS
+
+
+def is_update_allowed(repo: str, token: str, issue: dict[str, Any], actor: str) -> bool:
+    contributor = str((issue.get("user") or {}).get("login") or "")
+    return actor == contributor or is_maintainer(repo, token, actor)
 
 
 def issue_comment_exists(repo: str, token: str, issue_number: int, marker: str) -> bool:
@@ -77,6 +102,30 @@ def source_issue_number(pr: dict[str, Any]) -> int | None:
     ref = str((pr.get("head") or {}).get("ref") or "")
     match = re.fullmatch(r"translation-library/issue-(\d+)", ref)
     return int(match.group(1)) if match else None
+
+
+def source_issue_for_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str, Any] | None:
+    issue_number = source_issue_number(pr)
+    if not issue_number:
+        return None
+    return github_request("GET", repo, token, f"/issues/{issue_number}", allow_404=True)
+
+
+def commit_and_push_submission(branch: str, issue_number: int) -> bool:
+    run(["git", "config", "user.name", "github-actions[bot]"])
+    run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"])
+    run(["git", "add", *LIBRARY_PATHS])
+    if run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
+        return False
+    run(["git", "commit", "-m", f"data: refresh achievement translations from issue {issue_number}"])
+    run(["git", "push", "--force-with-lease", "--set-upstream", "origin", branch])
+    return True
+
+
+def update_pr_title_and_body(repo: str, token: str, pr_number: int) -> None:
+    title = Path("pr_title.txt").read_text(encoding="utf-8").strip()
+    body = Path("pr_body.md").read_text(encoding="utf-8")
+    github_request("PATCH", repo, token, f"/pulls/{pr_number}", {"title": title, "body": body})
 
 
 def open_translation_prs(repo: str, token: str) -> list[dict[str, Any]]:
@@ -105,8 +154,20 @@ def thank_contributor(repo: str, token: str, merged_pr_number: int) -> None:
         "This PR has been merged, and the submission is now in the library.\n"
     )
     comment_issue(repo, token, merged_pr_number, body, THANKS_MARKER)
-    if issue_number:
-        comment_issue(repo, token, issue_number, body, THANKS_MARKER)
+
+
+def delete_merged_pr_branch(repo: str, token: str, merged_pr_number: int) -> None:
+    pr = github_request("GET", repo, token, f"/pulls/{merged_pr_number}")
+    head = pr.get("head") or {}
+    if not pr.get("merged") or str((pr.get("base") or {}).get("ref") or "") != "main":
+        return
+    if str((head.get("repo") or {}).get("full_name") or "") != repo:
+        return
+    branch = str(head.get("ref") or "")
+    if not branch.startswith("translation-library/issue-"):
+        return
+    encoded_ref = urllib.parse.quote(f"heads/{branch}", safe="/")
+    github_request("DELETE", repo, token, f"/git/refs/{encoded_ref}", allow_404=True, allow_422=True)
 
 
 def refresh_pr(repo: str, token: str, pr: dict[str, Any], merged_pr_number: int) -> None:
@@ -130,17 +191,9 @@ def refresh_pr(repo: str, token: str, pr: dict[str, Any], merged_pr_number: int)
     if not result.get("ok"):
         return
 
-    run(["git", "config", "user.name", "github-actions[bot]"])
-    run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"])
-    run(["git", "add", *LIBRARY_PATHS])
-    if run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
+    if not commit_and_push_submission(branch, issue_number):
         return
-    run(["git", "commit", "-m", f"data: refresh achievement translations from issue {issue_number}"])
-    run(["git", "push", "--force-with-lease", "--set-upstream", "origin", branch])
-
-    title = Path("pr_title.txt").read_text(encoding="utf-8").strip()
-    body = Path("pr_body.md").read_text(encoding="utf-8")
-    github_request("PATCH", repo, token, f"/pulls/{pr_number}", {"title": title, "body": body})
+    update_pr_title_and_body(repo, token, pr_number)
     comment = (
         f"{REFRESH_MARKER}\n"
         "此投稿 PR 已基于最新 `main` 重新生成，以避免其他翻译 PR 合并后产生索引冲突。\n\n"
@@ -155,19 +208,117 @@ def refresh_open_prs(repo: str, token: str, merged_pr_number: int) -> None:
         refresh_pr(repo, token, pr, merged_pr_number)
 
 
+def comment_update_failure(repo: str, token: str, pr_number: int, contributor: str, errors: list[str], warnings: list[str], retry_allowed: bool) -> None:
+    intro = (
+        f"{UPDATE_MARKER}\n"
+        f"@{contributor} PR 中的 `/update` 未能通过检查，投稿分支和 PR 描述未更新。\n"
+        f"@{contributor}, the PR `/update` did not pass validation, so the submission branch and PR description were not updated.\n\n"
+    )
+    body = intro + "检查详情 / Review details:\n"
+    for error in errors:
+        body += f"- {error}\n"
+    if warnings:
+        body += "\n警告 / Warnings:\n"
+        for warning in warnings:
+            body += f"- {warning}\n"
+    if retry_allowed:
+        body += (
+            "\n可以继续在 PR 或来源 issue 中评论 `/update <附件链接>` 提交新的 ZIP。\n"
+            "You can comment `/update <attachment link>` again on the PR or source issue with a replacement ZIP.\n"
+        )
+    comment_issue(repo, token, pr_number, body)
+
+
+def update_pr_from_comment(repo: str, token: str, event: dict[str, Any]) -> None:
+    pr_issue = event.get("issue") or {}
+    pr_number = int(pr_issue["number"])
+    pr = github_request("GET", repo, token, f"/pulls/{pr_number}")
+    issue = source_issue_for_pr(repo, token, pr)
+    if not issue:
+        comment_issue(
+            repo,
+            token,
+            pr_number,
+            f"{UPDATE_MARKER}\n无法从 PR 中找到来源投稿 issue，不能处理 `/update`。\n\n"
+            "Could not find the source contribution issue from this PR, so `/update` cannot be processed.",
+        )
+        return
+    actor = str(((event.get("comment") or {}).get("user") or {}).get("login") or "")
+    contributor = str((issue.get("user") or {}).get("login") or "contributor")
+    if not is_update_allowed(repo, token, issue, actor):
+        comment_issue(
+            repo,
+            token,
+            pr_number,
+            f"{UPDATE_MARKER}\n`/update` 只能由原投稿人 @{contributor} 或维护者使用。\n\n"
+            f"`/update` can only be used by the original contributor @{contributor} or a maintainer.",
+        )
+        return
+
+    branch = str((pr.get("head") or {}).get("ref") or "")
+    if not branch.startswith("translation-library/issue-"):
+        return
+    issue_number = int(issue["number"])
+    run(["git", "fetch", "origin", "main"])
+    run(["git", "fetch", "origin", branch], check=False)
+    run(["git", "checkout", "-B", branch, "origin/main"])
+    try:
+        result = validate_and_update({"issue": issue, "comment": event.get("comment") or {}}, repo, token)
+    except SystemExit:
+        data = json.loads(Path("submission_result.json").read_text(encoding="utf-8"))
+        comment_update_failure(
+            repo,
+            token,
+            pr_number,
+            contributor,
+            list(data.get("errors", [])),
+            list(data.get("warnings", [])),
+            bool(data.get("retry_allowed")),
+        )
+        return
+    if not result.get("ok"):
+        return
+    changed = commit_and_push_submission(branch, issue_number)
+    update_pr_title_and_body(repo, token, pr_number)
+    body = (
+        f"{UPDATE_MARKER}\n"
+        f"@{contributor} PR 中的 `/update` 已通过检查，投稿分支和 PR 描述已自动刷新。\n"
+        f"@{contributor}, the PR `/update` passed validation. The submission branch and PR description have been refreshed automatically.\n"
+    )
+    if not changed:
+        body += "\n没有检测到文件内容变化，但 PR 描述已重新生成。\nNo file content changes were detected, but the PR description was regenerated.\n"
+    comment_issue(repo, token, pr_number, body)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Maintain translation PRs after a library submission merge.")
     parser.add_argument("--repo", required=True)
     parser.add_argument("--token", required=True)
-    parser.add_argument("--merged-pr", type=int, required=True)
+    parser.add_argument("--merged-pr", type=int, default=0)
+    parser.add_argument("--event", type=Path)
     parser.add_argument("--thank", action="store_true")
     parser.add_argument("--refresh-open", action="store_true")
+    parser.add_argument("--delete-branch", action="store_true")
+    parser.add_argument("--pr-update", action="store_true")
     args = parser.parse_args()
 
     if args.thank:
+        if not args.merged_pr:
+            raise SystemExit("--thank requires --merged-pr")
         thank_contributor(args.repo, args.token, args.merged_pr)
+    if args.delete_branch:
+        if not args.merged_pr:
+            raise SystemExit("--delete-branch requires --merged-pr")
+        delete_merged_pr_branch(args.repo, args.token, args.merged_pr)
     if args.refresh_open:
+        if not args.merged_pr:
+            raise SystemExit("--refresh-open requires --merged-pr")
         refresh_open_prs(args.repo, args.token, args.merged_pr)
+    if args.pr_update:
+        if not args.event:
+            raise SystemExit("--event is required for PR event handling")
+        event = json.loads(args.event.read_text(encoding="utf-8"))
+        update_pr_from_comment(args.repo, args.token, event)
 
 
 if __name__ == "__main__":

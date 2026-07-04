@@ -229,7 +229,6 @@ jobs:
               printf "感谢 @%s 为成就翻译库做出贡献。维护者已批准审核 PR，机器人现在会合并它。\n\n" "$CONTRIBUTOR"
               printf "Thank you @%s for contributing to the achievement translation library. The maintainer approved the review PR, so the bot will merge it now.\n" "$CONTRIBUTOR"
             } > thanks.md
-            gh issue comment "$SOURCE_ISSUE" --body-file thanks.md
             gh pr comment "$PR_NUMBER" --body-file thanks.md
           else
             {
@@ -240,7 +239,29 @@ jobs:
             gh pr comment "$PR_NUMBER" --body-file thanks.md
           fi
           gh pr merge "$PR_NUMBER" --squash --delete-branch
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --refresh-open
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --delete-branch --refresh-open
+
+  pr-update:
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/update ') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Refresh translation PR from update attachment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --pr-update
 
   post-merge-maintenance:
     if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -263,4 +284,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --thank --refresh-open
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --thank --delete-branch --refresh-open
