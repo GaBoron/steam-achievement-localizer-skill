@@ -41,7 +41,8 @@ jobs:
           python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode guard
 
   review:
-    if: ${{ (github.event_name == 'issues' && github.event.action != 'edited' && github.event.action != 'labeled' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'translation-contribution' && !github.event.issue.pull_request) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && (startsWith(github.event.comment.body, '/update ') || github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review '))) }}
+    needs: issue-guard
+    if: ${{ always() && ((github.event_name == 'issues' && github.event.action != 'edited' && github.event.action != 'labeled' && !github.event.issue.pull_request && (contains(github.event.issue.labels.*.name, 'translation-contribution') || startsWith(github.event.issue.title, '[Translation contribution]') || (contains(github.event.issue.body, '### Steam app ID') && (contains(github.event.issue.body, '### Achievement schema ZIP') || contains(github.event.issue.body, '### 成就 schema ZIP'))))) || (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'translation-contribution' && !github.event.issue.pull_request) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && (startsWith(github.event.comment.body, '/update ') || github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review ')))) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -138,7 +139,22 @@ jobs:
           fi
           PR_URL="$(gh pr list --head "$BRANCH" --json url --jq '.[0].url')"
           if [ -z "$PR_URL" ]; then
-            PR_URL="$(gh pr create --title "$PR_TITLE" --body-file pr_body.md --base main --head "$BRANCH")"
+            set +e
+            PR_CREATE_OUTPUT="$(gh pr create --title "$PR_TITLE" --body-file pr_body.md --base main --head "$BRANCH" 2>&1)"
+            PR_CREATE_STATUS=$?
+            set -e
+            if [ "$PR_CREATE_STATUS" -ne 0 ]; then
+              {
+                printf "Automatic first review passed and the submission branch was pushed, but the bot could not create the pull request.\n\n"
+                printf "Branch: \`%s\`\n" "$BRANCH"
+                printf "Manual PR URL: https://github.com/%s/compare/main...%s?expand=1\n\n" "$GITHUB_REPOSITORY" "$BRANCH"
+                printf "GitHub returned:\n\n\`\`\`text\n%s\n\`\`\`\n\n" "$PR_CREATE_OUTPUT"
+                printf "If the error says GitHub Actions is not permitted to create pull requests, enable repository setting: Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests.\n"
+              } > issue-comment.md
+              gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+              exit 0
+            fi
+            PR_URL="$PR_CREATE_OUTPUT"
           else
             gh pr edit "$PR_URL" --title "$PR_TITLE" --body-file pr_body.md
           fi
