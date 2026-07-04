@@ -6,7 +6,9 @@
 
 ## 游戏列表
 
-暂无已收录游戏。
+| Steam app ID | 游戏 | 支持语言 | 成就数 | 成就文件 | 商店 |
+| --- | --- | --- | ---: | --- | --- |
+| `1593500` | God of War/战神4 | schinese | 37 | [`achievement-library/files/1593500/UserGameStatsSchema_1593500.bin`](files/1593500/UserGameStatsSchema_1593500.bin) | [Steam](https://store.steampowered.com/app/1593500/God_of_War/) |
 
 ## 搜索建议
 
