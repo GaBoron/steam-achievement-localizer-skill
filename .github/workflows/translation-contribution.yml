@@ -147,7 +147,7 @@ jobs:
           PR_TITLE="$(cat pr_title.txt)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add achievement-library/README.md achievement-library/README_EN.md achievement-library/index.json achievement-library/files
+          git add achievement-library/files
           if git diff --cached --quiet; then
             echo "No library changes to commit."
           else
@@ -208,38 +208,13 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Thank contributor and merge approved PR
+      - name: Merge approved PR and run post-merge maintenance
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          SOURCE_ISSUE="$(python - <<'PY'
-          import os
-          import re
-          body = os.environ.get("PR_BODY", "")
-          match = re.search(r"/issues/(\d+)", body)
-          print(match.group(1) if match else "")
-          PY
-          )"
-          if [ -n "$SOURCE_ISSUE" ]; then
-            CONTRIBUTOR="$(gh issue view "$SOURCE_ISSUE" --json author --jq '.author.login')"
-            {
-              printf "<!-- sal-merged-thanks -->\n"
-              printf "感谢 @%s 为成就翻译库做出贡献。维护者已批准审核 PR，机器人现在会合并它。\n\n" "$CONTRIBUTOR"
-              printf "Thank you @%s for contributing to the achievement translation library. The maintainer approved the review PR, so the bot will merge it now.\n" "$CONTRIBUTOR"
-            } > thanks.md
-            gh pr comment "$PR_NUMBER" --body-file thanks.md
-          else
-            {
-              printf "<!-- sal-merged-thanks -->\n"
-              printf "感谢你为成就翻译库做出贡献。维护者已批准此 PR，机器人现在会合并它。\n\n"
-              printf "Thank you for contributing to the achievement translation library. The maintainer approved this PR, so the bot will merge it now.\n"
-            } > thanks.md
-            gh pr comment "$PR_NUMBER" --body-file thanks.md
-          fi
           gh pr merge "$PR_NUMBER" --squash --delete-branch
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --delete-branch --refresh-open
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch
 
   pr-update:
     if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/update ') }}
@@ -264,7 +239,7 @@ jobs:
           python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --pr-update
 
   post-merge-maintenance:
-    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.actor != 'github-actions[bot]' && github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -278,10 +253,10 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Thank contributor and refresh remaining translation PRs
+      - name: Update library index, thank contributor, and delete PR branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --thank --delete-branch --refresh-open
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch

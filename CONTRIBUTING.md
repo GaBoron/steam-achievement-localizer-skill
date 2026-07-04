@@ -38,7 +38,7 @@ Open the English or Chinese translation contribution issue template and attach t
 - create a pull request after first review passes;
 - congratulate the contributor and close the issue after the review PR is ready.
 
-The generated pull request contains the updated library index, the submitted schema file, and a review table listing every achievement ID with each submitted language's achievement name and description. A maintainer still performs final review before merge.
+The generated pull request contains only the submitted schema file plus a review table listing every achievement ID with each submitted language's achievement name and description. After the pull request is merged, the bot updates `achievement-library/index.json` and regenerates both Markdown library indexes from that JSON. A maintainer still performs final review before merge.
 
 The pull request is opened by GitHub Actions so contributors cannot directly change the generated branch, submitted file, or PR description. The PR body and bot PR comments mention the original contributor so they can follow the PR without receiving duplicate issue comments.
 

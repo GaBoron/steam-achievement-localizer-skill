@@ -273,6 +273,16 @@ def write_human_index(index: dict[str, Any]) -> None:
     HUMAN_INDEX_EN_PATH.write_text("\n".join(en_lines) + "\n", encoding="utf-8")
 
 
+def upsert_index_entry(entry: dict[str, Any]) -> None:
+    index = load_index()
+    game_id = str(entry.get("game_id") or "")
+    entries = [item for item in index.get("entries", []) if str(item.get("game_id")) != game_id]
+    entries.append(entry)
+    index["entries"] = sort_entries(entries)
+    write_index(index)
+    write_human_index(index)
+
+
 def existing_entry(index: dict[str, Any], game_id: str) -> dict[str, Any] | None:
     for entry in index.get("entries", []):
         if str(entry.get("game_id")) == game_id:
@@ -399,7 +409,7 @@ def force_warning(message: str) -> str:
     return f"Maintainer override accepted with /force-review: {message}"
 
 
-def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> dict[str, Any]:
+def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, write_indexes: bool = False) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
     contributor_id = str((issue.get("user") or {}).get("login") or "")
@@ -521,11 +531,8 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         "source_issue": issue.get("html_url"),
         "contributor_id": contributor_id,
     }
-    entries = [item for item in index.get("entries", []) if str(item.get("game_id")) != game_id]
-    entries.append(entry)
-    index["entries"] = sort_entries(entries)
-    write_index(index)
-    write_human_index(index)
+    if write_indexes:
+        upsert_index_entry(entry)
 
     branch = f"translation-library/issue-{issue_number}"
     pr_title = f"Add achievement translations for {game_name} ({game_id})"

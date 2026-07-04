@@ -11,14 +11,22 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from library_submission_bot import validate_and_update
+from library_submission_bot import (
+    achievement_rows,
+    load_schema,
+    sha256,
+    upsert_index_entry,
+    validate_and_update,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-LIBRARY_PATHS = [
+SUBMISSION_PATHS = [
+    "achievement-library/files",
+]
+INDEX_PATHS = [
     "achievement-library/README.md",
     "achievement-library/README_EN.md",
     "achievement-library/index.json",
-    "achievement-library/files",
 ]
 THANKS_MARKER = "<!-- sal-merged-thanks -->"
 REFRESH_MARKER = "<!-- sal-pr-refreshed -->"
@@ -114,7 +122,7 @@ def source_issue_for_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str, 
 def commit_and_push_submission(branch: str, issue_number: int) -> bool:
     run(["git", "config", "user.name", "github-actions[bot]"])
     run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"])
-    run(["git", "add", *LIBRARY_PATHS])
+    run(["git", "add", *SUBMISSION_PATHS])
     if run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
         return False
     run(["git", "commit", "-m", f"data: refresh achievement translations from issue {issue_number}"])
@@ -122,10 +130,75 @@ def commit_and_push_submission(branch: str, issue_number: int) -> bool:
     return True
 
 
+def commit_and_push_main_index(merged_pr_number: int) -> bool:
+    run(["git", "config", "user.name", "github-actions[bot]"])
+    run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"])
+    run(["git", "add", *INDEX_PATHS])
+    if run(["git", "diff", "--cached", "--quiet"], check=False).returncode == 0:
+        return False
+    run(["git", "commit", "-m", f"data: update library index after PR #{merged_pr_number}"])
+    run(["git", "push", "origin", "main"])
+    return True
+
+
 def update_pr_title_and_body(repo: str, token: str, pr_number: int) -> None:
     title = Path("pr_title.txt").read_text(encoding="utf-8").strip()
     body = Path("pr_body.md").read_text(encoding="utf-8")
     github_request("PATCH", repo, token, f"/pulls/{pr_number}", {"title": title, "body": body})
+
+
+def strip_inline_code(value: str) -> str:
+    text = value.strip()
+    if len(text) >= 2 and text.startswith("`") and text.endswith("`"):
+        return text[1:-1].strip()
+    return text
+
+
+def pr_body_field(body: str, label: str) -> str:
+    pattern = re.compile(rf"^- {re.escape(label)}:\s*(.+?)\s*$", re.MULTILINE)
+    match = pattern.search(body)
+    return strip_inline_code(match.group(1)) if match else ""
+
+
+def entry_from_merged_pr(pr: dict[str, Any]) -> dict[str, Any]:
+    body = str(pr.get("body") or "")
+    game_id = pr_body_field(body, "Steam app ID")
+    languages = [item.strip() for item in pr_body_field(body, "Supported languages").split(",") if item.strip()]
+    schema_file = pr_body_field(body, "Schema file")
+    schema_path = REPO_ROOT / schema_file
+    if not schema_file or not schema_path.is_file():
+        raise RuntimeError(f"merged PR schema file is missing from main: {schema_file or '<empty>'}")
+    data, nodes = load_schema(schema_path)
+    rows = achievement_rows(nodes, languages[0] if languages else "english")
+    contributor = pr_body_field(body, "Contributor").lstrip("@")
+    entry = {
+        "game_name": pr_body_field(body, "Game name"),
+        "game_id": game_id,
+        "store_url": pr_body_field(body, "Steam store URL"),
+        "languages": languages,
+        "schema_file": schema_file,
+        "achievement_count": len(rows),
+        "sha256": sha256(data),
+        "source_issue": pr_body_field(body, "Source issue"),
+        "contributor_id": contributor,
+    }
+    missing = [key for key in ("game_name", "game_id", "store_url", "schema_file", "source_issue") if not entry[key]]
+    if missing:
+        raise RuntimeError("merged PR body is missing required index field(s): " + ", ".join(missing))
+    if not languages:
+        raise RuntimeError("merged PR body is missing supported languages")
+    return entry
+
+
+def update_main_index_from_merged_pr(repo: str, token: str, merged_pr_number: int) -> bool:
+    pr = github_request("GET", repo, token, f"/pulls/{merged_pr_number}")
+    if not pr.get("merged") or str((pr.get("base") or {}).get("ref") or "") != "main":
+        return False
+    run(["git", "fetch", "origin", "main"])
+    run(["git", "checkout", "-B", "main", "origin/main"])
+    entry = entry_from_merged_pr(pr)
+    upsert_index_entry(entry)
+    return commit_and_push_main_index(merged_pr_number)
 
 
 def open_translation_prs(repo: str, token: str) -> list[dict[str, Any]]:
@@ -297,11 +370,16 @@ def main() -> None:
     parser.add_argument("--merged-pr", type=int, default=0)
     parser.add_argument("--event", type=Path)
     parser.add_argument("--thank", action="store_true")
+    parser.add_argument("--update-index", action="store_true")
     parser.add_argument("--refresh-open", action="store_true")
     parser.add_argument("--delete-branch", action="store_true")
     parser.add_argument("--pr-update", action="store_true")
     args = parser.parse_args()
 
+    if args.update_index:
+        if not args.merged_pr:
+            raise SystemExit("--update-index requires --merged-pr")
+        update_main_index_from_merged_pr(args.repo, args.token, args.merged_pr)
     if args.thank:
         if not args.merged_pr:
             raise SystemExit("--thank requires --merged-pr")
