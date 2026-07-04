@@ -1,6 +1,6 @@
 # 贡献共享成就翻译
 
-简体中文 | [English](CONTRIBUTING.md)
+简体中文 | [English](CONTRIBUTING_EN.md)
 
 本仓库接受用户投稿的 Steam 成就 schema 文件，用于维护 `achievement-library/` 中的公开翻译库。投稿流程由 GitHub issue、GitHub Actions 和维护者审核共同完成；普通 skill 本地化流程不会自动向仓库投稿。
 
