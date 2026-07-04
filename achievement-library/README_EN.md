@@ -2,15 +2,14 @@
 
 [简体中文](README.md) | English
 
-Browse this page first when checking whether a game has already been submitted. Use your browser search on this page for the Steam app ID, game name, or language code.
+Browse this page first when checking whether a game has already been submitted. Games are sorted by game name using pinyin or alphabetical order. Use your browser search on this page for the Steam app ID, game name, contributor, or language code.
 
 ## Games
 
-| Steam app ID | Game | Languages | Achievements | Schema file | Store |
-| --- | --- | --- | ---: | --- | --- |
-| `250900` | The Binding of Isaac: Rebirth | english, schinese | 641 | [`achievement-library/files/250900/UserGameStatsSchema_250900.bin`](files/250900/UserGameStatsSchema_250900.bin) | [Steam](https://store.steampowered.com/app/250900/The_Binding_of_Isaac_Rebirth/) |
-| `1259420` | Days Gone/往日不再 | schinese | 67 | [`achievement-library/files/1259420/UserGameStatsSchema_1259420.bin`](files/1259420/UserGameStatsSchema_1259420.bin) | [Steam](https://store.steampowered.com/app/1259420/Days_Gone/) |
-| `1593500` | God of War/战神4 | schinese | 37 | [`achievement-library/files/1593500/UserGameStatsSchema_1593500.bin`](files/1593500/UserGameStatsSchema_1593500.bin) | [Steam](https://store.steampowered.com/app/1593500/God_of_War/) |
+| Steam app ID | Game | Contributor | Languages | Achievements | Schema file | Store |
+| --- | --- | --- | --- | ---: | --- | --- |
+| `1593500` | God of War/战神4 | @GaBoron | schinese | 37 | [`achievement-library/files/1593500/UserGameStatsSchema_1593500.bin`](files/1593500/UserGameStatsSchema_1593500.bin) | [Steam](https://store.steampowered.com/app/1593500/God_of_War/) |
+| `250900` | The Binding of Isaac: Rebirth | @GaBoron | english, schinese | 641 | [`achievement-library/files/250900/UserGameStatsSchema_250900.bin`](files/250900/UserGameStatsSchema_250900.bin) | [Steam](https://store.steampowered.com/app/250900/The_Binding_of_Isaac_Rebirth/) |
 
 ## Search Tips
 
