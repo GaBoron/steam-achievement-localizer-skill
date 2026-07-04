@@ -3,6 +3,19 @@
   "description": "Community-submitted Steam achievement schema translations. Entries are added through reviewed pull requests generated from translation-contribution issues.",
   "entries": [
     {
+      "game_name": "Batman: Arkham City Game - of the Year Edition",
+      "game_id": "200260",
+      "store_url": "https://store.steampowered.com/app/200260/Batman_Arkham_City__Game_of_the_Year_Edition/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/200260/UserGameStatsSchema_200260.bin",
+      "achievement_count": 64,
+      "sha256": "45821fb57451d86dddad6b2bbe962754cf6c1b8c9bf3c6495580b2f8e6ee7789",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/19",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "Batman_Arkham_Knight",
       "game_id": "208650",
       "store_url": "https://store.steampowered.com/app/208650/Batman_Arkham_Knight/",
