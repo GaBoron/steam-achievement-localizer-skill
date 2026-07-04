@@ -13,6 +13,9 @@ on:
   pull_request_review:
     types:
       - submitted
+  pull_request:
+    types:
+      - closed
 
 permissions:
   contents: write
@@ -79,12 +82,8 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
           BRANCH="translation-library/issue-$ISSUE_NUMBER"
-          git fetch origin "$BRANCH" || true
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            git checkout -B "$BRANCH" "origin/$BRANCH"
-          else
-            git checkout -b "$BRANCH"
-          fi
+          git fetch origin main
+          git checkout -B "$BRANCH" "origin/main"
 
       - name: Validate submission and update library files
         id: validate
@@ -109,21 +108,28 @@ jobs:
           from pathlib import Path
           data = json.loads(Path("submission_result.json").read_text(encoding="utf-8"))
           if data.get("retry_allowed"):
+              print("自动初审发现了可以通过替换文件修复的问题。\n")
               print("Automatic first review found a file problem that can be updated.\n")
           else:
+              print("自动初审无法继续，此 issue 将被关闭。\n")
               print("Automatic first review cannot continue, so this issue will be closed.\n")
+          print("检查详情 / Review details:")
           for item in data.get("errors", []):
               print(f"- {item}")
           warnings = data.get("warnings", [])
           if warnings:
-              print("\nWarnings:")
+              print("\n警告 / Warnings:")
               for item in warnings:
                   print(f"- {item}")
           if data.get("retry_allowed"):
+              print("\n原 issue 标题和正文在提交后已冻结，但评论仍开放。要替换上传文件，请在新评论中附上修正后的 ZIP，并写 `/update <附件链接>`。")
               print("\nThe original issue title and body are frozen after submission, but comments remain open. To replace the uploaded file, attach the corrected ZIP in a new comment and write `/update <attachment link>`.")
           PY
           else
-            printf "Automatic first review failed before a detailed report was created.\n" > issue-comment.md
+            {
+              printf "自动初审失败，但没有生成详细报告。\n\n"
+              printf "Automatic first review failed before a detailed report was created.\n"
+            } > issue-comment.md
           fi
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
           if [ -f submission_result.json ] && [ "$(python -c 'import json; print(str(json.load(open("submission_result.json", encoding="utf-8")).get("close_issue", False)).lower())')" = "true" ]; then
@@ -145,7 +151,7 @@ jobs:
             echo "No library changes to commit."
           else
             git commit -m "data: add achievement translations from issue $ISSUE_NUMBER"
-            git push --set-upstream origin "$BRANCH"
+            git push --force-with-lease --set-upstream origin "$BRANCH"
           fi
           PR_URL="$(gh pr list --head "$BRANCH" --json url --jq '.[0].url')"
           if [ -z "$PR_URL" ]; then
@@ -155,10 +161,12 @@ jobs:
             set -e
             if [ "$PR_CREATE_STATUS" -ne 0 ]; then
               {
+                printf "自动初审已通过，投稿分支也已推送，但机器人无法创建 PR。\n\n"
                 printf "Automatic first review passed and the submission branch was pushed, but the bot could not create the pull request.\n\n"
                 printf "Branch: \`%s\`\n" "$BRANCH"
                 printf "Manual PR URL: https://github.com/%s/compare/main...%s?expand=1\n\n" "$GITHUB_REPOSITORY" "$BRANCH"
                 printf "GitHub returned:\n\n\`\`\`text\n%s\n\`\`\`\n\n" "$PR_CREATE_OUTPUT"
+                printf "如果错误提示 GitHub Actions 不允许创建 PR，请开启仓库设置：Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests。\n\n"
                 printf "If the error says GitHub Actions is not permitted to create pull requests, enable repository setting: Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests.\n"
               } > issue-comment.md
               gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
@@ -174,8 +182,10 @@ jobs:
           from pathlib import Path
           data = json.loads(Path("submission_result.json").read_text(encoding="utf-8"))
           pr_url = Path("pr_url.txt").read_text(encoding="utf-8").strip()
+          print(f"恭喜，感谢你为 {data['game_name']} ({data['game_id']}) 贡献成就翻译。")
           print(f"Congratulations, and thank you for contributing achievement translations for {data['game_name']} ({data['game_id']}).")
           print()
+          print("自动初审已通过，PR 已准备好等待维护者审核：")
           print("Automatic first review passed. A pull request is ready for maintainer review:")
           print(pr_url)
           PY
@@ -186,6 +196,17 @@ jobs:
     if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Thank contributor and merge approved PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -202,11 +223,43 @@ jobs:
           )"
           if [ -n "$SOURCE_ISSUE" ]; then
             CONTRIBUTOR="$(gh issue view "$SOURCE_ISSUE" --json author --jq '.author.login')"
-            printf "Thank you @%s for contributing to the achievement translation library. The maintainer approved the review PR, so the bot will merge it now.\n" "$CONTRIBUTOR" > thanks.md
+            {
+              printf "<!-- sal-merged-thanks -->\n"
+              printf "感谢 @%s 为成就翻译库做出贡献。维护者已批准审核 PR，机器人现在会合并它。\n\n" "$CONTRIBUTOR"
+              printf "Thank you @%s for contributing to the achievement translation library. The maintainer approved the review PR, so the bot will merge it now.\n" "$CONTRIBUTOR"
+            } > thanks.md
             gh issue comment "$SOURCE_ISSUE" --body-file thanks.md
             gh pr comment "$PR_NUMBER" --body-file thanks.md
           else
-            printf "Thank you for contributing to the achievement translation library. The maintainer approved this PR, so the bot will merge it now.\n" > thanks.md
+            {
+              printf "<!-- sal-merged-thanks -->\n"
+              printf "感谢你为成就翻译库做出贡献。维护者已批准此 PR，机器人现在会合并它。\n\n"
+              printf "Thank you for contributing to the achievement translation library. The maintainer approved this PR, so the bot will merge it now.\n"
+            } > thanks.md
             gh pr comment "$PR_NUMBER" --body-file thanks.md
           fi
           gh pr merge "$PR_NUMBER" --squash --delete-branch
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --refresh-open
+
+  post-merge-maintenance:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Thank contributor and refresh remaining translation PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --thank --refresh-open

@@ -208,9 +208,12 @@ def guard_issue(event: dict[str, Any], repo: str, token: str) -> None:
                 repo,
                 token,
                 issue_number,
+                "此翻译投稿 issue 提交后已冻结。只有维护者可以修改标题或正文；评论仍保持开放，"
+                "投稿人可以继续使用 `/update <附件链接>` 提交替换文件。非维护者的编辑已被还原。\n\n"
                 "This translation contribution issue is frozen after submission. "
                 "Only maintainers can change the submitted title or body. "
-                "Comments, including `/update <attachment link>`, remain open. The non-maintainer edit was reverted.",
+                "Comments remain open, including `/update <attachment link>` for replacement files. "
+                "The non-maintainer edit was reverted.",
             )
 
 
@@ -228,6 +231,7 @@ def require_maintainer_command(event: dict[str, Any], repo: str, token: str, com
                 repo,
                 token,
                 int(issue["number"]),
+                f"`{command}` 仅管理员可用。普通审核流程未被更改。\n\n"
                 f"`{command}` is admin-only. The normal review flow was not changed.",
             )
     if output_path:

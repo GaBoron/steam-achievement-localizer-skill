@@ -278,6 +278,15 @@ def github_api_json(url: str, token: str | None) -> dict[str, Any] | None:
         return None
 
 
+def pull_request_matches_source_issue(repo: str, token: str | None, pr_number: int, issue_number: int) -> bool:
+    data = github_api_json(f"https://api.github.com/repos/{repo}/pulls/{pr_number}", token)
+    if not data:
+        return False
+    body = str(data.get("body") or "")
+    head_ref = str((data.get("head") or {}).get("ref") or "")
+    return f"/issues/{issue_number}" in body or head_ref == f"translation-library/issue-{issue_number}"
+
+
 def open_duplicate_warnings(repo: str, token: str | None, game_id: str, issue_number: int) -> list[str]:
     query = urllib.parse.quote(f"repo:{repo} is:open {game_id}")
     data = github_api_json(f"https://api.github.com/search/issues?q={query}", token)
@@ -289,6 +298,8 @@ def open_duplicate_warnings(repo: str, token: str | None, game_id: str, issue_nu
         if number == issue_number:
             continue
         if item.get("pull_request"):
+            if pull_request_matches_source_issue(repo, token, number, issue_number):
+                continue
             warnings.append(f"Open pull request #{number} also mentions Steam app ID {game_id}: {item.get('html_url')}")
             continue
         labels = {label.get("name") for label in item.get("labels", []) if isinstance(label, dict)}
@@ -363,6 +374,10 @@ def event_force_review(event: dict[str, Any]) -> bool:
     return is_comment_command(str(comment.get("body") or ""), "/force-review")
 
 
+def force_warning(message: str) -> str:
+    return f"Maintainer override accepted with /force-review: {message}"
+
+
 def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
@@ -413,7 +428,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         if blocking_duplicates and not force_review:
             problems.extend(ReviewProblem(item) for item in blocking_duplicates)
         elif blocking_duplicates:
-            warnings.extend(f"Maintainer override accepted with /force-review: {item}" for item in blocking_duplicates)
+            warnings.extend(force_warning(item) for item in blocking_duplicates)
         else:
             warnings.extend(duplicate_warnings)
 
@@ -458,7 +473,11 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
             if missing_ids:
                 preview = ", ".join(missing_ids[:10])
                 suffix = " ..." if len(missing_ids) > 10 else ""
-                problems.append(ReviewProblem(f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+                message = f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}."
+                if force_review:
+                    warnings.append(force_warning(message))
+                else:
+                    problems.append(ReviewProblem(f"{message} Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
 
         if problems:
             errors, retry_allowed = split_problems(problems)

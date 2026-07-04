@@ -62,7 +62,7 @@ Admins can also comment:
 /force-review
 ```
 
-This command ignores duplicate-check warnings from open pull requests or open translation contribution issues, then continues to the PR-generation stage. Use it only when the maintainer has manually checked the duplicate warning and wants the submission to continue anyway. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, Steam Binary KeyValues parse failures, or missing language fields. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+This command lets the submission continue when a maintainer has manually accepted review warnings, such as another open submission mentioning the same app ID or selected language fields that are incomplete and should be inspected in the PR. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, unsafe ZIP structure, or Steam Binary KeyValues parse failures. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
 
 After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
 
