@@ -12,6 +12,23 @@ and your translation preferences. The skill reads the file, exports achievement
 text for review, writes the selected language back, and checks the result before
 you replace anything in Steam.
 
+## Community Translation Library
+
+This repository also hosts a user-submitted achievement translation library:
+
+- lookup index: `achievement-library/index.json`
+- schema files: `achievement-library/files/<game_id>/UserGameStatsSchema_<game_id>.bin`
+
+To share a translated achievement schema, open a `Share a translated achievement
+schema` issue and upload the matching `UserGameStatsSchema_<game_id>.bin` file.
+The submission bot checks that the issue game ID, store URL, file name, Steam
+Binary KeyValues format, and selected language fields match. If first review
+passes, it opens a pull request with the updated index, uploaded schema file,
+and a review table of every achievement ID with each submitted language's name
+and description.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for duplicate checks and submission rules.
+
 ## Install
 
 ### Ask Codex to install it

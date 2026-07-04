@@ -115,6 +115,7 @@ The generated `*.missing.csv` file uses `target_name` and `target_description` c
 4. **Collect trusted translations**
    - For batch missing-language work, use the generated `*.missing.csv`, translate every row that lacks the target language, and write the result to a CSV accepted by the script only when the user asks for batch translation.
    - Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass.
+   - If the repository checkout includes `achievement-library/index.json`, use it as an optional community translation reference when the user asks to search or reuse shared submissions.
    - Preserve source provenance in a note, intermediate file, or report when translations come from external references.
    - If translating from scratch, follow the user's glossary, tone, title-casing, item-name, character-name, and terminology preferences.
 
