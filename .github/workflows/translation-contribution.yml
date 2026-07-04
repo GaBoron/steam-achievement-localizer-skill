@@ -83,6 +83,7 @@ jobs:
         run: |
           BRANCH="translation-library/issue-$ISSUE_NUMBER"
           git fetch origin main
+          git fetch origin "$BRANCH" || true
           git checkout -B "$BRANCH" "origin/main"
 
       - name: Validate submission and update library files

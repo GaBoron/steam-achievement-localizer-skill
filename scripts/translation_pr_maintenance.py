@@ -123,6 +123,7 @@ def refresh_pr(repo: str, token: str, pr: dict[str, Any], merged_pr_number: int)
         return
 
     run(["git", "fetch", "origin", "main"])
+    run(["git", "fetch", "origin", branch], check=False)
     run(["git", "checkout", "-B", branch, "origin/main"])
 
     result = validate_and_update({"issue": issue}, repo, token)
