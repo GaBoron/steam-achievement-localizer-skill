@@ -51,10 +51,18 @@ The bot will rerun the file checks from that replacement ZIP link. If a non-main
 Admins can comment:
 
 ```text
+/rerun-checks
+```
+
+This command reruns the normal issue guard and submission review from the current issue contents. It is useful when an earlier automation run was missed or failed because of workflow infrastructure. It does not ignore duplicate-submission warnings or any hard validation failure. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+
+Admins can also comment:
+
+```text
 /force-review
 ```
 
-This command ignores duplicate-check warnings from open pull requests or open translation contribution issues, then continues to the PR-generation stage. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, Steam Binary KeyValues parse failures, or missing language fields. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+This command ignores duplicate-check warnings from open pull requests or open translation contribution issues, then continues to the PR-generation stage. Use it only when the maintainer has manually checked the duplicate warning and wants the submission to continue anyway. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, Steam Binary KeyValues parse failures, or missing language fields. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
 
 After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
 

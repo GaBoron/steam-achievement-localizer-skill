@@ -176,6 +176,9 @@ def guard_issue(event: dict[str, Any], repo: str, token: str) -> None:
     issue_number = int(issue["number"])
     action = str(event.get("action") or "")
     actor = str((event.get("sender") or {}).get("login") or "")
+    comment = event.get("comment") or {}
+    if comment and is_comment_command(str(comment.get("body") or ""), "/rerun-checks") and not is_admin(repo, token, actor):
+        return
 
     labels_to_add: list[str] = []
     translation_issue = is_translation_issue(issue) or was_translation_issue_before_edit(event)
