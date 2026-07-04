@@ -42,6 +42,19 @@
       "contributor_id": "luoxiaogaung"
     },
     {
+      "game_name": "CODE VEIN",
+      "game_id": "678960",
+      "store_url": "https://store.steampowered.com/app/678960/CODE_VEIN/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/678960/UserGameStatsSchema_678960.bin",
+      "achievement_count": 43,
+      "sha256": "4969f863794dbe37d04ae1454617ffff165f7fddc82d4e4c5259e3d344e80a49",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/23",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "Days Gone/往日不再",
       "game_id": "1259420",
       "store_url": "https://store.steampowered.com/app/1259420/Days_Gone/",
