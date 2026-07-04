@@ -81,6 +81,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "NieR:Automata™",
+      "game_id": "524220",
+      "store_url": "https://store.steampowered.com/app/524220/NieRAutomata/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/524220/UserGameStatsSchema_524220.bin",
+      "achievement_count": 47,
+      "sha256": "b730079ef75e50d83840d62e8195d89cdb2bf2c814f89c087456eb7918b04237",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/13",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "The Binding of Isaac",
       "game_id": "113200",
       "store_url": "https://store.steampowered.com/app/113200/The_Binding_of_Isaac/",
