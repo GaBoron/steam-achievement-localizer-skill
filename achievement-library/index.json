@@ -29,6 +29,19 @@
       "contributor_id": "luoxiaogaung"
     },
     {
+      "game_name": "Chained Together",
+      "game_id": "2567870",
+      "store_url": "https://store.steampowered.com/app/2567870/Chained_Together/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/2567870/UserGameStatsSchema_2567870.bin",
+      "achievement_count": 16,
+      "sha256": "d428d9e5a782b6ab19f00670e2f8fe06dee6d611266021c3a9464d83d5cf1751",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/25",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "Days Gone/往日不再",
       "game_id": "1259420",
       "store_url": "https://store.steampowered.com/app/1259420/Days_Gone/",
