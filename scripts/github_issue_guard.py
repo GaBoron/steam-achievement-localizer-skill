@@ -22,6 +22,7 @@ LABELS = {
 }
 
 MAINTAINER_PERMISSIONS = {"admin", "maintain"}
+ADMIN_PERMISSIONS = {"admin"}
 BOT_USERS = {"github-actions[bot]"}
 
 
@@ -147,6 +148,18 @@ def is_maintainer(repo: str, token: str, actor: str) -> bool:
     return permission_for(repo, token, actor) in MAINTAINER_PERMISSIONS
 
 
+def is_admin(repo: str, token: str, actor: str) -> bool:
+    if actor in BOT_USERS:
+        return True
+    return permission_for(repo, token, actor) in ADMIN_PERMISSIONS
+
+
+def is_comment_command(body: str, command: str) -> bool:
+    text = body.strip().lower()
+    normalized = command.lower()
+    return text == normalized or text.startswith(normalized + " ")
+
+
 def comment_issue(repo: str, token: str, issue_number: int, body: str) -> None:
     github_request("POST", repo, token, f"/issues/{issue_number}/comments", {"body": body})
 
@@ -195,18 +208,43 @@ def guard_issue(event: dict[str, Any], repo: str, token: str) -> None:
             )
 
 
+def require_maintainer_command(event: dict[str, Any], repo: str, token: str, command: str) -> None:
+    comment = event.get("comment") or {}
+    body = str(comment.get("body") or "").strip()
+    output_path = os.environ.get("GITHUB_OUTPUT")
+    authorized = True
+    if is_comment_command(body, command):
+        actor = str((comment.get("user") or {}).get("login") or "")
+        authorized = is_admin(repo, token, actor)
+        if not authorized:
+            issue = event.get("issue") or {}
+            comment_issue(
+                repo,
+                token,
+                int(issue["number"]),
+                f"`{command}` is admin-only. The normal review flow was not changed.",
+            )
+    if output_path:
+        with Path(output_path).open("a", encoding="utf-8") as handle:
+            handle.write(f"authorized={str(authorized).lower()}\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Label and freeze GitHub issue-form submissions.")
     parser.add_argument("--event", type=Path, required=True, help="GitHub event JSON path")
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", ""), help="owner/repo")
     parser.add_argument("--token", default=os.environ.get("GITHUB_TOKEN"), help="GitHub token")
-    parser.add_argument("--mode", choices=["guard"], default="guard")
+    parser.add_argument("--mode", choices=["guard", "require-maintainer-command"], default="guard")
+    parser.add_argument("--command", default="/force-review", help="comment command checked by require-maintainer-command")
     args = parser.parse_args()
 
     if not args.repo or not args.token:
         raise SystemExit("Both --repo and --token are required.")
     event = json.loads(args.event.read_text(encoding="utf-8"))
-    guard_issue(event, args.repo, args.token)
+    if args.mode == "guard":
+        guard_issue(event, args.repo, args.token)
+    else:
+        require_maintainer_command(event, args.repo, args.token, args.command)
 
 
 if __name__ == "__main__":

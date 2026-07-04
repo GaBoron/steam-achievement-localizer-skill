@@ -352,12 +352,24 @@ def event_update_attachment(event: dict[str, Any]) -> Attachment | None:
     return extract_update_attachment(comment.get("body") or "")
 
 
+def is_comment_command(body: str, command: str) -> bool:
+    text = body.strip().lower()
+    normalized = command.lower()
+    return text == normalized or text.startswith(normalized + " ")
+
+
+def event_force_review(event: dict[str, Any]) -> bool:
+    comment = event.get("comment") or {}
+    return is_comment_command(str(comment.get("body") or ""), "/force-review")
+
+
 def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
     fields = parse_issue_form(issue.get("body") or "")
     problems: list[ReviewProblem] = []
     warnings: list[str] = []
+    force_review = event_force_review(event)
 
     game_name = first_line(field_value(fields, ["Game name", "游戏名"]))
     game_id = first_line(field_value(fields, ["Steam app ID"]))
@@ -398,8 +410,10 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
     if game_id and repo:
         duplicate_warnings = open_duplicate_warnings(repo, token, game_id, issue_number)
         blocking_duplicates = [item for item in duplicate_warnings if item.startswith("Open ")]
-        if blocking_duplicates:
+        if blocking_duplicates and not force_review:
             problems.extend(ReviewProblem(item) for item in blocking_duplicates)
+        elif blocking_duplicates:
+            warnings.extend(f"Maintainer override accepted with /force-review: {item}" for item in blocking_duplicates)
         else:
             warnings.extend(duplicate_warnings)
 
@@ -473,7 +487,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
 
     branch = f"translation-library/issue-{issue_number}"
     pr_title = f"Add achievement translations for {game_name} ({game_id})"
-    pr_body = build_pr_body(entry, coverage, nodes, languages, issue.get("html_url", ""))
+    pr_body = build_pr_body(entry, coverage, nodes, languages, issue.get("html_url", ""), warnings, force_review)
     Path("pr_title.txt").write_text(pr_title + "\n", encoding="utf-8")
     Path("pr_body.md").write_text(pr_body, encoding="utf-8")
     result = {
@@ -485,6 +499,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         "languages": languages,
         "achievement_count": len(rows),
         "warnings": warnings,
+        "force_review": force_review,
         "issue_number": issue_number,
     }
     Path("submission_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -503,10 +518,28 @@ def write_failure(errors: list[str], warnings: list[str], retry_allowed: bool) -
     raise SystemExit(1)
 
 
-def build_pr_body(entry: dict[str, Any], coverage: dict[str, int], nodes: list[Any], languages: list[str], issue_url: str) -> str:
+def build_pr_body(
+    entry: dict[str, Any],
+    coverage: dict[str, int],
+    nodes: list[Any],
+    languages: list[str],
+    issue_url: str,
+    warnings: list[str],
+    force_review: bool,
+) -> str:
     language_summary = ", ".join(languages)
     coverage_lines = "\n".join(f"- `{language}`: {count}/{entry['achievement_count']} achievements" for language, count in coverage.items())
     table = build_review_table(nodes, languages)
+    warning_section = ""
+    if warnings or force_review:
+        warning_lines = "\n".join(f"- {escape_table(item)}" for item in warnings) if warnings else "- No warning details were recorded."
+        override_line = "- Maintainer override: `/force-review` was used." if force_review else "- Maintainer override: not used."
+        warning_section = f"""
+## Warnings
+
+{override_line}
+{warning_lines}
+"""
     return f"""## Translation Library Submission
 
 - Game name: {entry['game_name']}
@@ -521,6 +554,7 @@ def build_pr_body(entry: dict[str, Any], coverage: dict[str, int], nodes: list[A
 ## Language Coverage
 
 {coverage_lines}
+{warning_section}
 
 ## Achievement Text
 

@@ -41,7 +41,7 @@ jobs:
           python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode guard
 
   review:
-    if: ${{ (github.event_name == 'issues' && github.event.action != 'edited' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && startsWith(github.event.comment.body, '/update ')) }}
+    if: ${{ (github.event_name == 'issues' && github.event.action != 'edited' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && (startsWith(github.event.comment.body, '/update ') || github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review '))) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -52,7 +52,18 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Authorize maintainer override command
+        id: force_auth
+        if: ${{ github.event_name == 'issue_comment' && (github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review ')) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /force-review
+
       - name: Prepare submission branch
+        if: ${{ github.event_name != 'issue_comment' || (github.event.comment.body != '/force-review' && !startsWith(github.event.comment.body, '/force-review ')) || steps.force_auth.outputs.authorized == 'true' }}
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
@@ -66,6 +77,7 @@ jobs:
 
       - name: Validate submission and update library files
         id: validate
+        if: ${{ github.event_name != 'issue_comment' || (github.event.comment.body != '/force-review' && !startsWith(github.event.comment.body, '/force-review ')) || steps.force_auth.outputs.authorized == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -74,7 +86,7 @@ jobs:
           python scripts/library_submission_bot.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN"
 
       - name: Comment on failed review
-        if: failure()
+        if: ${{ failure() && (github.event_name != 'issue_comment' || (github.event.comment.body != '/force-review' && !startsWith(github.event.comment.body, '/force-review ')) || steps.force_auth.outputs.authorized == 'true') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -107,7 +119,7 @@ jobs:
           fi
 
       - name: Create or update pull request
-        if: success()
+        if: ${{ success() && (github.event_name != 'issue_comment' || (github.event.comment.body != '/force-review' && !startsWith(github.event.comment.body, '/force-review ')) || steps.force_auth.outputs.authorized == 'true') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}

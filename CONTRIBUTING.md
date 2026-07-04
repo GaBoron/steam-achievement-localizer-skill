@@ -48,6 +48,14 @@ If the bot finds a ZIP name, schema file name, or schema file content problem, i
 
 The bot will rerun the file checks from that replacement ZIP link. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
 
+Admins can comment:
+
+```text
+/force-review
+```
+
+This command ignores duplicate-check warnings from open pull requests or open translation contribution issues, then continues to the PR-generation stage. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, Steam Binary KeyValues parse failures, or missing language fields. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+
 After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
 
 ## Labels
