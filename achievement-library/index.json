@@ -29,6 +29,19 @@
       "contributor_id": "GaBoron"
     },
     {
+      "game_name": "The Binding of Isaac",
+      "game_id": "113200",
+      "store_url": "https://store.steampowered.com/app/113200/The_Binding_of_Isaac/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/113200/UserGameStatsSchema_113200.bin",
+      "achievement_count": 99,
+      "sha256": "58e5cc67475944ace585b9381060a927c666d4076c8618622440df3ba5a88cd0",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/9",
+      "contributor_id": "GaBoron"
+    },
+    {
       "game_name": "The Binding of Isaac: Rebirth",
       "game_id": "250900",
       "store_url": "https://store.steampowered.com/app/250900/The_Binding_of_Isaac_Rebirth/",
