@@ -20,7 +20,8 @@ Steam 文件前做检查。
 - 成就文件：`achievement-library/files/<game_id>/UserGameStatsSchema_<game_id>.bin`
 
 如果你想分享已经翻译好的成就 schema，请使用英文或中文翻译投稿 issue 模板，并上传
-对应的 `UserGameStatsSchema_<game_id>.bin` 文件。后台机器人会
+对应的 `UserGameStatsSchema_<game_id>.zip` 文件。ZIP 内必须只包含一个
+`UserGameStatsSchema_<game_id>.bin` 文件。后台机器人会
 检查 issue 中的游戏 ID、商店地址、文件名、Steam Binary KeyValues 格式，以及你
 选择的语言字段是否都存在。初审通过后，机器人会自动创建 PR，包含更新后的索引、
 上传的成就文件，以及每个成就 ID 对应各语言成就名和描述的审核表格。

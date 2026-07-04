@@ -1,5 +1,5 @@
 name: 分享已翻译的成就文件
-description: 上传本地化后的 Steam UserGameStatsSchema_*.bin 文件供审核。
+description: 上传包含本地化 Steam UserGameStatsSchema_*.bin 文件的 ZIP 供审核。
 title: "[Translation contribution]: "
 labels:
   - translation-contribution
@@ -10,7 +10,7 @@ body:
         感谢分享 Steam 成就翻译文件。
 
         提交前请先检查 `achievement-library/README.md` 中的用户可读索引、当前开放 PR，以及带有 `translation-contribution` 标签的开放 issue，确认相同 Steam app ID 尚未投稿。
-        请上传已经包含所选语言字段的原始 `UserGameStatsSchema_<game_id>.bin` 文件。
+        GitHub issue 不能直接上传 `.bin` 附件。请把已经包含所选语言字段的原始 `UserGameStatsSchema_<game_id>.bin` 放入名为 `UserGameStatsSchema_<game_id>.zip` 的 ZIP 中再上传。ZIP 内必须只有这一个 `.bin` 文件。
   - type: input
     id: game-name
     attributes:
@@ -84,8 +84,8 @@ body:
   - type: textarea
     id: schema-file
     attributes:
-      label: 成就 schema 文件
-      description: 请拖放上传一个 `UserGameStatsSchema_<game_id>.bin` 文件。
-      placeholder: 上传 UserGameStatsSchema_123456.bin
+      label: 成就 schema ZIP
+      description: 请拖放上传一个 `UserGameStatsSchema_<game_id>.zip` 文件。ZIP 内必须只包含一个 `UserGameStatsSchema_<game_id>.bin` 文件。
+      placeholder: 上传 UserGameStatsSchema_123456.zip
     validations:
       required: true

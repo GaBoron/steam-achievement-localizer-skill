@@ -16,19 +16,21 @@
 
 ## 投稿规范
 
-- 上传真实的 Steam schema 文件，文件名必须是 `UserGameStatsSchema_<game_id>.bin`。
+- 上传名为 `UserGameStatsSchema_<game_id>.zip` 的 ZIP，因为 GitHub issue 不能直接上传 `.bin` 附件。
+- ZIP 内必须只包含一个真实 Steam schema 文件，文件名必须是 `UserGameStatsSchema_<game_id>.bin`。
 - issue 中的游戏 ID、Steam 商店地址、上传文件名必须一致。
 - 只选择上传文件中已经完整包含的语言。
 - 每个选择的语言都必须为每个成就包含成就名和成就描述字段。
-- 保持文件为 Steam Binary KeyValues 格式。不要先转换成 JSON、CSV 或文本。
+- 保持 schema 文件为 Steam Binary KeyValues 格式。不要先转换成 JSON、CSV 或文本再压缩。
 - 不要上传包含私人账号数据、密钥或无关本地文件的内容。
 
 ## 审核流程
 
-使用英文或中文翻译投稿 issue 模板并附上 `.bin` 文件。GitHub Action 会：
+使用英文或中文翻译投稿 issue 模板并附上 `.zip` 文件。GitHub Action 会：
 
 - 下载上传的文件；
-- 检查 Steam 商店地址、游戏 ID 和文件名是否匹配；
+- 检查 Steam 商店地址、游戏 ID、ZIP 文件名和 schema 文件名是否匹配；
+- 解压 ZIP，并要求其中只有一个 schema 文件；
 - 按 Steam Binary KeyValues 解析文件，并要求序列化后字节完全一致；
 - 检查所选语言字段是否覆盖所有成就；
 - 检查游戏是否已经在库中，或是否已有开放投稿；
@@ -37,13 +39,13 @@
 
 生成的 PR 会包含更新后的用户索引、机器索引、投稿 schema 文件，以及每个成就 ID 对应各投稿语言成就名和描述的审核表格。最终是否合并仍由维护者审核决定。
 
-如果机器人发现文件名或文件内容问题，它会保留 issue，并说明具体失败原因。请在新评论中附上修正后的文件，并写：
+如果机器人发现 ZIP 文件名、schema 文件名或 schema 文件内容问题，它会保留 issue，并说明具体失败原因。请在新评论中附上修正后的 ZIP，并写：
 
 ```text
 /update <附件链接>
 ```
 
-机器人会用这个新链接重新检查文件。如果问题不是替换文件能解决的，例如重复投稿或 Steam app 元数据不匹配，机器人会说明原因并直接关闭 issue。
+机器人会用这个新 ZIP 链接重新检查文件。如果问题不是替换文件能解决的，例如重复投稿或 Steam app 元数据不匹配，机器人会说明原因并直接关闭 issue。
 
 维护者 approve 生成的审核 PR 后，机器人会先感谢投稿人，然后 squash merge 这个 PR，并删除投稿分支。
 

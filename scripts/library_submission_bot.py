@@ -10,6 +10,7 @@ import sys
 import tempfile
 import urllib.parse
 import urllib.request
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -24,8 +25,10 @@ INDEX_PATH = REPO_ROOT / "achievement-library" / "index.json"
 HUMAN_INDEX_PATH = REPO_ROOT / "achievement-library" / "README.md"
 FILES_ROOT = REPO_ROOT / "achievement-library" / "files"
 MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024
+MAX_SCHEMA_BYTES = 32 * 1024 * 1024
 LANGUAGE_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
 SCHEMA_NAME_RE = re.compile(r"^UserGameStatsSchema_(\d+)\.bin$", re.IGNORECASE)
+ZIP_NAME_RE = re.compile(r"^UserGameStatsSchema_(\d+)\.zip$", re.IGNORECASE)
 ATTACHMENT_RE = re.compile(r"\[([^\]]+)\]\((https://github\.com/user-attachments/[^\s)]+)\)|(?<!\()(?P<url>https://github\.com/user-attachments/[^\s)]+)")
 
 
@@ -124,6 +127,44 @@ def download_attachment(attachment: Attachment, token: str | None, destination: 
                 if total > MAX_DOWNLOAD_BYTES:
                     raise ValueError("uploaded file is larger than the 32 MiB review limit")
                 handle.write(chunk)
+
+
+def safe_archive_members(archive: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
+    members: list[zipfile.ZipInfo] = []
+    for member in archive.infolist():
+        normalized = member.filename.replace("\\", "/")
+        if member.is_dir() or normalized.endswith("/"):
+            continue
+        parts = [part for part in normalized.split("/") if part]
+        if not parts or any(part in {".", ".."} for part in parts):
+            raise ValueError("ZIP archive contains an unsafe file path")
+        if normalized.startswith("/") or re.match(r"^[A-Za-z]:", normalized):
+            raise ValueError("ZIP archive contains an absolute file path")
+        members.append(member)
+    return members
+
+
+def resolve_schema_upload(downloaded: Path, attachment: Attachment, game_id: str, output_dir: Path) -> Path:
+    expected_name = f"UserGameStatsSchema_{game_id}.bin"
+    if zipfile.is_zipfile(downloaded):
+        with zipfile.ZipFile(downloaded) as archive:
+            members = safe_archive_members(archive)
+            if len(members) != 1:
+                raise ValueError("ZIP upload must contain exactly one schema file")
+            member = members[0]
+            member_name = Path(member.filename.replace("\\", "/")).name
+            if member_name != expected_name:
+                raise ValueError(f"ZIP upload must contain {expected_name}; got {member_name}")
+            if member.file_size > MAX_SCHEMA_BYTES:
+                raise ValueError("schema file inside ZIP is larger than the 32 MiB review limit")
+            output_path = output_dir / expected_name
+            output_path.write_bytes(archive.read(member))
+            return output_path
+    if attachment.filename_from_url:
+        return downloaded
+    if attachment.filename != expected_name:
+        raise ValueError(f"uploaded file name must be {expected_name}; got {attachment.filename}")
+    return downloaded
 
 
 def load_index() -> dict[str, Any]:
@@ -293,9 +334,12 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         + parse_extra_languages(field_value(fields, ["Additional Steam language codes", "其他 Steam 语言代码"]))
     ))
     update_attachment = event_update_attachment(event)
-    if update_attachment and update_attachment.filename_from_url and re.fullmatch(r"\d+", game_id):
-        update_attachment = Attachment(filename=f"UserGameStatsSchema_{game_id}.bin", url=update_attachment.url)
-    attachment = update_attachment or extract_attachment(field_value(fields, ["Achievement schema file", "成就 schema 文件"]))
+    attachment = update_attachment or extract_attachment(field_value(fields, [
+        "Achievement schema ZIP",
+        "Achievement schema file",
+        "成就 schema ZIP",
+        "成就 schema 文件",
+    ]))
 
     if not game_name:
         problems.append(ReviewProblem("Game name is required."))
@@ -312,7 +356,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
     if invalid_languages:
         problems.append(ReviewProblem("Invalid Steam language code(s): " + ", ".join(invalid_languages)))
     if not attachment:
-        problems.append(ReviewProblem("Attach exactly one UserGameStatsSchema_<game_id>.bin file, or comment `/update <attachment link>` with a replacement file.", retryable=True))
+        problems.append(ReviewProblem("Attach exactly one UserGameStatsSchema_<game_id>.zip file containing UserGameStatsSchema_<game_id>.bin, or comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
 
     index = load_index()
     existing = existing_entry(index, game_id) if game_id else None
@@ -326,12 +370,15 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         else:
             warnings.extend(duplicate_warnings)
 
-    if attachment and game_id:
-        name_match = SCHEMA_NAME_RE.fullmatch(attachment.filename)
-        if not name_match:
-            problems.append(ReviewProblem(f"Uploaded file name must be UserGameStatsSchema_{game_id}.bin; got {attachment.filename}. Comment `/update <attachment link>` with a correctly named replacement file.", retryable=True))
-        elif name_match.group(1) != game_id:
-            problems.append(ReviewProblem(f"Uploaded file name app ID {name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement file whose name matches the submitted app ID.", retryable=True))
+    if attachment and game_id and not attachment.filename_from_url:
+        schema_name_match = SCHEMA_NAME_RE.fullmatch(attachment.filename)
+        zip_name_match = ZIP_NAME_RE.fullmatch(attachment.filename)
+        if not schema_name_match and not zip_name_match:
+            problems.append(ReviewProblem(f"Uploaded file must be UserGameStatsSchema_{game_id}.zip containing UserGameStatsSchema_{game_id}.bin; got {attachment.filename}. Comment `/update <attachment link>` with a correctly named ZIP replacement.", retryable=True))
+        elif schema_name_match and schema_name_match.group(1) != game_id:
+            problems.append(ReviewProblem(f"Uploaded file name app ID {schema_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement ZIP whose name matches the submitted app ID.", retryable=True))
+        elif zip_name_match and zip_name_match.group(1) != game_id:
+            problems.append(ReviewProblem(f"Uploaded ZIP name app ID {zip_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement ZIP whose name matches the submitted app ID.", retryable=True))
 
     if problems:
         errors, retry_allowed = split_problems(problems)
@@ -342,28 +389,29 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         downloaded = Path(tmp) / attachment.filename
         try:
             download_attachment(attachment, token, downloaded)
-            data, nodes = load_schema(downloaded)
+            schema_path = resolve_schema_upload(downloaded, attachment, game_id, Path(tmp))
+            data, nodes = load_schema(schema_path)
             rebuilt = serialize(nodes)
         except Exception as exc:  # noqa: BLE001 - user-facing validation report.
-            return write_failure([f"Could not download or parse the uploaded schema: {exc}. Comment `/update <attachment link>` with a replacement file."], warnings, True)
+            return write_failure([f"Could not download or parse the uploaded schema ZIP: {exc}. Comment `/update <attachment link>` with a replacement ZIP containing exactly one UserGameStatsSchema_{game_id}.bin file."], warnings, True)
 
         if data != rebuilt:
-            problems.append(ReviewProblem("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser. Comment `/update <attachment link>` with a replacement file.", retryable=True))
+            problems.append(ReviewProblem("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
         rows = achievement_rows(nodes, languages[0])
         achievement_ids = [str(row.get("api_name", "")) for row in rows]
         if not rows:
-            problems.append(ReviewProblem("Uploaded schema does not contain any Steam achievement display name/description records. Comment `/update <attachment link>` with a replacement file.", retryable=True))
+            problems.append(ReviewProblem("Uploaded schema does not contain any Steam achievement display name/description records. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
         if any(not achievement_id for achievement_id in achievement_ids):
-            problems.append(ReviewProblem("Every achievement must have a non-empty API name. Comment `/update <attachment link>` with a replacement file.", retryable=True))
+            problems.append(ReviewProblem("Every achievement must have a non-empty API name. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
         if len(set(achievement_ids)) != len(achievement_ids):
-            problems.append(ReviewProblem("Achievement API names must be unique. Comment `/update <attachment link>` with a replacement file.", retryable=True))
+            problems.append(ReviewProblem("Achievement API names must be unique. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
 
         coverage, missing, _ = language_coverage(nodes, languages)
         for language, missing_ids in missing.items():
             if missing_ids:
                 preview = ", ".join(missing_ids[:10])
                 suffix = " ..." if len(missing_ids) > 10 else ""
-                problems.append(ReviewProblem(f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}. Comment `/update <attachment link>` with a replacement file.", retryable=True))
+                problems.append(ReviewProblem(f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
 
         if problems:
             errors, retry_allowed = split_problems(problems)
@@ -372,7 +420,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         target_dir = FILES_ROOT / game_id
         target_dir.mkdir(parents=True, exist_ok=True)
         target_file = target_dir / f"UserGameStatsSchema_{game_id}.bin"
-        shutil.copy2(downloaded, target_file)
+        shutil.copy2(schema_path, target_file)
 
     entry = {
         "game_name": game_name,

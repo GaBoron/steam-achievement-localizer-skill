@@ -22,6 +22,7 @@ This repository also hosts a user-submitted achievement translation library:
 
 To share a translated achievement schema, open the English or Chinese
 translation contribution issue template and upload the matching
+`UserGameStatsSchema_<game_id>.zip` file. The ZIP must contain exactly one
 `UserGameStatsSchema_<game_id>.bin` file.
 The submission bot checks that the issue game ID, store URL, file name, Steam
 Binary KeyValues format, and selected language fields match. If first review
