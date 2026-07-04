@@ -34,18 +34,19 @@ Open the English or Chinese translation contribution issue template and attach t
 - parse the file as Steam Binary KeyValues and require byte-identical roundtrip serialization;
 - verify that the selected language fields are present for every achievement;
 - check whether the game is already in the library or in another open submission;
+- add the `translation-contribution` label if GitHub did not apply it, then freeze the issue title and body so submitted fields cannot be changed afterward;
 - create a pull request after first review passes;
 - congratulate the contributor and close the issue after the review PR is ready.
 
 The generated pull request contains the updated library index, the submitted schema file, and a review table listing every achievement ID with each submitted language's achievement name and description. A maintainer still performs final review before merge.
 
-If the bot finds a ZIP name, schema file name, or schema file content problem, it leaves the issue open and explains what failed. Attach the corrected ZIP in a new comment and write:
+If the bot finds a ZIP name, schema file name, or schema file content problem, it leaves the issue open and explains what failed. Translation contribution issue titles and bodies are frozen after submission, so contributors cannot edit submitted fields, but comments remain open. Attach the corrected ZIP in a new comment and write:
 
 ```text
 /update <attachment link>
 ```
 
-The bot will rerun the file checks from that replacement ZIP link. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
+The bot will rerun the file checks from that replacement ZIP link. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
 
 After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
 
@@ -53,6 +54,8 @@ After a maintainer approves the generated review PR, the bot thanks the contribu
 
 - Translation library submissions use `translation-contribution`. Only this label is reviewed by the submission bot.
 - Skill bug reports use `skill-bug`. These issues do not trigger translation-file review.
+
+If GitHub does not apply the issue-template label automatically, Actions creates and applies the matching label from the issue contents.
 
 ## Library Layout
 

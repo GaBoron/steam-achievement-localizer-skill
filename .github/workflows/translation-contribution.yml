@@ -5,6 +5,7 @@ on:
     types:
       - opened
       - edited
+      - labeled
       - reopened
   issue_comment:
     types:
@@ -19,8 +20,28 @@ permissions:
   pull-requests: write
 
 jobs:
+  issue-guard:
+    if: ${{ github.event_name == 'issues' && !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Apply issue labels and freeze translation submissions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode guard
+
   review:
-    if: ${{ (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && startsWith(github.event.comment.body, '/update ')) }}
+    if: ${{ (github.event_name == 'issues' && github.event.action != 'edited' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && startsWith(github.event.comment.body, '/update ')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -75,7 +96,7 @@ jobs:
               for item in warnings:
                   print(f"- {item}")
           if data.get("retry_allowed"):
-              print("\nTo replace the uploaded file, attach the corrected file in a new comment and write `/update <attachment link>`.")
+              print("\nThe original issue title and body are frozen after submission, but comments remain open. To replace the uploaded file, attach the corrected ZIP in a new comment and write `/update <attachment link>`.")
           PY
           else
             printf "Automatic first review failed before a detailed report was created.\n" > issue-comment.md
