@@ -14,6 +14,7 @@
 
 | Steam app ID | 游戏 | 贡献者 | 支持语言 | 成就数 | 成就文件 | 商店 |
 | --- | --- | --- | --- | ---: | --- | --- |
+| `208650` | Batman_Arkham_Knight | [@luoxiaogaung](https://github.com/luoxiaogaung) | schinese | 113 | [`UserGameStatsSchema_208650.bin`](https://raw.githubusercontent.com/GaBoron/steam-achievement-localizer-skill/main/achievement-library/files/208650/UserGameStatsSchema_208650.bin) | [Steam](https://store.steampowered.com/app/208650/Batman_Arkham_Knight/) |
 | `1259420` | Days Gone/往日不再 | [@Rui-CC1225](https://github.com/Rui-CC1225) | schinese | 67 | [`UserGameStatsSchema_1259420.bin`](https://raw.githubusercontent.com/GaBoron/steam-achievement-localizer-skill/main/achievement-library/files/1259420/UserGameStatsSchema_1259420.bin) | [Steam](https://store.steampowered.com/app/1259420/Days_Gone/) |
 | `1593500` | God of War/战神4 | [@Rui-CC1225](https://github.com/Rui-CC1225) | schinese | 37 | [`UserGameStatsSchema_1593500.bin`](https://raw.githubusercontent.com/GaBoron/steam-achievement-localizer-skill/main/achievement-library/files/1593500/UserGameStatsSchema_1593500.bin) | [Steam](https://store.steampowered.com/app/1593500/God_of_War/) |
 | `113200` | The Binding of Isaac | [@GaBoron](https://github.com/GaBoron) | schinese | 99 | [`UserGameStatsSchema_113200.bin`](https://raw.githubusercontent.com/GaBoron/steam-achievement-localizer-skill/main/achievement-library/files/113200/UserGameStatsSchema_113200.bin) | [Steam](https://store.steampowered.com/app/113200/The_Binding_of_Isaac/) |
