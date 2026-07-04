@@ -1,6 +1,6 @@
 # Contributing Shared Achievement Translations
 
-[简体中文](CONTRIBUTING_CN.md)
+English | [简体中文](CONTRIBUTING_CN.md)
 
 This repository accepts community-submitted Steam achievement schema files for the public translation library in `achievement-library/`.
 
