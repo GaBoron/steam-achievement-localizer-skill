@@ -81,6 +81,19 @@
       "sha256": "2f6647a176a650dcacbab5f9b236e414f966f882583b68c3c04eebbe08fea624",
       "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/11",
       "contributor_id": "dexyrezz"
+    },
+    {
+      "game_name": "地铁：最后的曙光 重制版",
+      "game_id": "287390",
+      "store_url": "https://store.steampowered.com/app/287390/_/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/287390/UserGameStatsSchema_287390.bin",
+      "achievement_count": 49,
+      "sha256": "4830d37c68da32437dd156122efca9cc90ea18cf0d3acf4f10a02b0e9920e58f",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/27",
+      "contributor_id": "luoxiaogaung"
     }
   ]
 }
