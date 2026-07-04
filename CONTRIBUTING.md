@@ -32,9 +32,20 @@ Open the English or Chinese translation contribution issue template and attach t
 - parse the file as Steam Binary KeyValues and require byte-identical roundtrip serialization;
 - verify that the selected language fields are present for every achievement;
 - check whether the game is already in the library or in another open submission;
-- create a pull request after first review passes.
+- create a pull request after first review passes;
+- congratulate the contributor and close the issue after the review PR is ready.
 
 The generated pull request contains the updated library index, the submitted schema file, and a review table listing every achievement ID with each submitted language's achievement name and description. A maintainer still performs final review before merge.
+
+If the bot finds a file name or file content problem, it leaves the issue open and explains what failed. Attach the corrected file in a new comment and write:
+
+```text
+/update <attachment link>
+```
+
+The bot will rerun the file checks from that replacement link. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
+
+After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
 
 ## Labels
 

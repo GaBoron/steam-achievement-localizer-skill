@@ -6,6 +6,12 @@ on:
       - opened
       - edited
       - reopened
+  issue_comment:
+    types:
+      - created
+  pull_request_review:
+    types:
+      - submitted
 
 permissions:
   contents: write
@@ -14,7 +20,7 @@ permissions:
 
 jobs:
   review:
-    if: contains(github.event.issue.labels.*.name, 'translation-contribution')
+    if: ${{ (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'translation-contribution')) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'translation-contribution') && startsWith(github.event.comment.body, '/update ')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -57,7 +63,10 @@ jobs:
           import json
           from pathlib import Path
           data = json.loads(Path("submission_result.json").read_text(encoding="utf-8"))
-          print("Automatic first review did not pass.\n")
+          if data.get("retry_allowed"):
+              print("Automatic first review found a file problem that can be updated.\n")
+          else:
+              print("Automatic first review cannot continue, so this issue will be closed.\n")
           for item in data.get("errors", []):
               print(f"- {item}")
           warnings = data.get("warnings", [])
@@ -65,11 +74,16 @@ jobs:
               print("\nWarnings:")
               for item in warnings:
                   print(f"- {item}")
+          if data.get("retry_allowed"):
+              print("\nTo replace the uploaded file, attach the corrected file in a new comment and write `/update <attachment link>`.")
           PY
           else
             printf "Automatic first review failed before a detailed report was created.\n" > issue-comment.md
           fi
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+          if [ -f submission_result.json ] && [ "$(python -c 'import json; print(str(json.load(open("submission_result.json", encoding="utf-8")).get("close_issue", False)).lower())')" = "true" ]; then
+            gh issue close "$ISSUE_NUMBER" --reason "not planned"
+          fi
 
       - name: Create or update pull request
         if: success()
@@ -94,5 +108,45 @@ jobs:
           else
             gh pr edit "$PR_URL" --title "$PR_TITLE" --body-file pr_body.md
           fi
-          printf "Automatic first review passed. A pull request is ready for maintainer review: %s\n" "$PR_URL" > issue-comment.md
+          printf "%s\n" "$PR_URL" > pr_url.txt
+          python - <<'PY' > issue-comment.md
+          import json
+          from pathlib import Path
+          data = json.loads(Path("submission_result.json").read_text(encoding="utf-8"))
+          pr_url = Path("pr_url.txt").read_text(encoding="utf-8").strip()
+          print(f"Congratulations, and thank you for contributing achievement translations for {data['game_name']} ({data['game_id']}).")
+          print()
+          print("Automatic first review passed. A pull request is ready for maintainer review:")
+          print(pr_url)
+          PY
           gh issue comment "$ISSUE_NUMBER" --body-file issue-comment.md
+          gh issue close "$ISSUE_NUMBER" --reason "completed"
+
+  merge-approved:
+    if: ${{ github.event_name == 'pull_request_review' && github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Thank contributor and merge approved PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          SOURCE_ISSUE="$(python - <<'PY'
+          import os
+          import re
+          body = os.environ.get("PR_BODY", "")
+          match = re.search(r"/issues/(\d+)", body)
+          print(match.group(1) if match else "")
+          PY
+          )"
+          if [ -n "$SOURCE_ISSUE" ]; then
+            CONTRIBUTOR="$(gh issue view "$SOURCE_ISSUE" --json author --jq '.author.login')"
+            printf "Thank you @%s for contributing to the achievement translation library. The maintainer approved the review PR, so the bot will merge it now.\n" "$CONTRIBUTOR" > thanks.md
+            gh issue comment "$SOURCE_ISSUE" --body-file thanks.md
+            gh pr comment "$PR_NUMBER" --body-file thanks.md
+          else
+            printf "Thank you for contributing to the achievement translation library. The maintainer approved this PR, so the bot will merge it now.\n" > thanks.md
+            gh pr comment "$PR_NUMBER" --body-file thanks.md
+          fi
+          gh pr merge "$PR_NUMBER" --squash --delete-branch

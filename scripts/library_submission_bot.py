@@ -33,6 +33,13 @@ ATTACHMENT_RE = re.compile(r"\[([^\]]+)\]\((https://github\.com/user-attachments
 class Attachment:
     filename: str
     url: str
+    filename_from_url: bool = False
+
+
+@dataclass
+class ReviewProblem:
+    message: str
+    retryable: bool = False
 
 
 def parse_issue_form(body: str) -> dict[str, str]:
@@ -89,9 +96,17 @@ def extract_attachment(value: str) -> Attachment | None:
         return None
     match = matches[0]
     url = match.group(2) or match.group("url")
+    filename_from_url = not bool(match.group(1))
     filename = match.group(1) or Path(urllib.parse.urlparse(url).path).name
     filename = urllib.parse.unquote(filename.strip())
-    return Attachment(filename=filename, url=url)
+    return Attachment(filename=filename, url=url, filename_from_url=filename_from_url)
+
+
+def extract_update_attachment(body: str) -> Attachment | None:
+    text = body.strip()
+    if not text.lower().startswith("/update"):
+        return None
+    return extract_attachment(text[len("/update"):].strip())
 
 
 def download_attachment(attachment: Attachment, token: str | None, destination: Path) -> None:
@@ -208,6 +223,10 @@ def open_duplicate_warnings(repo: str, token: str | None, game_id: str, issue_nu
     return warnings
 
 
+def split_problems(problems: list[ReviewProblem]) -> tuple[list[str], bool]:
+    return [problem.message for problem in problems], all(problem.retryable for problem in problems)
+
+
 def language_coverage(nodes: list[Any], languages: list[str]) -> tuple[dict[str, int], dict[str, list[str]], list[dict[str, Any]]]:
     coverage: dict[str, int] = {}
     missing: dict[str, list[str]] = {}
@@ -254,11 +273,16 @@ def sanitize_branch_part(value: str) -> str:
     return value[:80] or "submission"
 
 
+def event_update_attachment(event: dict[str, Any]) -> Attachment | None:
+    comment = event.get("comment") or {}
+    return extract_update_attachment(comment.get("body") or "")
+
+
 def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
     fields = parse_issue_form(issue.get("body") or "")
-    errors: list[str] = []
+    problems: list[ReviewProblem] = []
     warnings: list[str] = []
 
     game_name = first_line(field_value(fields, ["Game name", "游戏名"]))
@@ -268,46 +292,50 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         parse_checked_languages(field_value(fields, ["Languages included in the uploaded file", "上传文件包含的语言"]))
         + parse_extra_languages(field_value(fields, ["Additional Steam language codes", "其他 Steam 语言代码"]))
     ))
-    attachment = extract_attachment(field_value(fields, ["Achievement schema file", "成就 schema 文件"]))
+    update_attachment = event_update_attachment(event)
+    if update_attachment and update_attachment.filename_from_url and re.fullmatch(r"\d+", game_id):
+        update_attachment = Attachment(filename=f"UserGameStatsSchema_{game_id}.bin", url=update_attachment.url)
+    attachment = update_attachment or extract_attachment(field_value(fields, ["Achievement schema file", "成就 schema 文件"]))
 
     if not game_name:
-        errors.append("Game name is required.")
+        problems.append(ReviewProblem("Game name is required."))
     if not re.fullmatch(r"\d+", game_id):
-        errors.append("Steam app ID must be numeric.")
+        problems.append(ReviewProblem("Steam app ID must be numeric."))
     store_id = steam_store_id(store_url)
     if not store_id:
-        errors.append("Steam store URL must be a store.steampowered.com/app/<id>/ URL.")
+        problems.append(ReviewProblem("Steam store URL must be a store.steampowered.com/app/<id>/ URL."))
     elif game_id and store_id != game_id:
-        errors.append(f"Steam store URL app ID {store_id} does not match submitted app ID {game_id}.")
+        problems.append(ReviewProblem(f"Steam store URL app ID {store_id} does not match submitted app ID {game_id}."))
     invalid_languages = [language for language in languages if not LANGUAGE_RE.fullmatch(language)]
     if not languages:
-        errors.append("Select or enter at least one Steam language code.")
+        problems.append(ReviewProblem("Select or enter at least one Steam language code."))
     if invalid_languages:
-        errors.append("Invalid Steam language code(s): " + ", ".join(invalid_languages))
+        problems.append(ReviewProblem("Invalid Steam language code(s): " + ", ".join(invalid_languages)))
     if not attachment:
-        errors.append("Attach exactly one UserGameStatsSchema_<game_id>.bin file.")
+        problems.append(ReviewProblem("Attach exactly one UserGameStatsSchema_<game_id>.bin file, or comment `/update <attachment link>` with a replacement file.", retryable=True))
 
     index = load_index()
     existing = existing_entry(index, game_id) if game_id else None
     if existing and existing.get("source_issue") != issue.get("html_url"):
-        errors.append(f"Steam app ID {game_id} already exists in achievement-library/README.md and achievement-library/index.json.")
+        problems.append(ReviewProblem(f"Steam app ID {game_id} already exists in achievement-library/README.md and achievement-library/index.json."))
     if game_id and repo:
         duplicate_warnings = open_duplicate_warnings(repo, token, game_id, issue_number)
         blocking_duplicates = [item for item in duplicate_warnings if item.startswith("Open ")]
         if blocking_duplicates:
-            errors.extend(blocking_duplicates)
+            problems.extend(ReviewProblem(item) for item in blocking_duplicates)
         else:
             warnings.extend(duplicate_warnings)
 
     if attachment and game_id:
         name_match = SCHEMA_NAME_RE.fullmatch(attachment.filename)
         if not name_match:
-            errors.append(f"Uploaded file name must be UserGameStatsSchema_{game_id}.bin; got {attachment.filename}.")
+            problems.append(ReviewProblem(f"Uploaded file name must be UserGameStatsSchema_{game_id}.bin; got {attachment.filename}. Comment `/update <attachment link>` with a correctly named replacement file.", retryable=True))
         elif name_match.group(1) != game_id:
-            errors.append(f"Uploaded file name app ID {name_match.group(1)} does not match submitted app ID {game_id}.")
+            problems.append(ReviewProblem(f"Uploaded file name app ID {name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement file whose name matches the submitted app ID.", retryable=True))
 
-    if errors:
-        return write_failure(errors, warnings)
+    if problems:
+        errors, retry_allowed = split_problems(problems)
+        return write_failure(errors, warnings, retry_allowed)
 
     assert attachment is not None
     with tempfile.TemporaryDirectory() as tmp:
@@ -317,28 +345,29 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
             data, nodes = load_schema(downloaded)
             rebuilt = serialize(nodes)
         except Exception as exc:  # noqa: BLE001 - user-facing validation report.
-            return write_failure([f"Could not download or parse the uploaded schema: {exc}"], warnings)
+            return write_failure([f"Could not download or parse the uploaded schema: {exc}. Comment `/update <attachment link>` with a replacement file."], warnings, True)
 
         if data != rebuilt:
-            errors.append("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser.")
+            problems.append(ReviewProblem("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser. Comment `/update <attachment link>` with a replacement file.", retryable=True))
         rows = achievement_rows(nodes, languages[0])
         achievement_ids = [str(row.get("api_name", "")) for row in rows]
         if not rows:
-            errors.append("Uploaded schema does not contain any Steam achievement display name/description records.")
+            problems.append(ReviewProblem("Uploaded schema does not contain any Steam achievement display name/description records. Comment `/update <attachment link>` with a replacement file.", retryable=True))
         if any(not achievement_id for achievement_id in achievement_ids):
-            errors.append("Every achievement must have a non-empty API name.")
+            problems.append(ReviewProblem("Every achievement must have a non-empty API name. Comment `/update <attachment link>` with a replacement file.", retryable=True))
         if len(set(achievement_ids)) != len(achievement_ids):
-            errors.append("Achievement API names must be unique.")
+            problems.append(ReviewProblem("Achievement API names must be unique. Comment `/update <attachment link>` with a replacement file.", retryable=True))
 
         coverage, missing, _ = language_coverage(nodes, languages)
         for language, missing_ids in missing.items():
             if missing_ids:
                 preview = ", ".join(missing_ids[:10])
                 suffix = " ..." if len(missing_ids) > 10 else ""
-                errors.append(f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}")
+                problems.append(ReviewProblem(f"Language {language} is missing name or description fields for {len(missing_ids)} achievement(s): {preview}{suffix}. Comment `/update <attachment link>` with a replacement file.", retryable=True))
 
-        if errors:
-            return write_failure(errors, warnings)
+        if problems:
+            errors, retry_allowed = split_problems(problems)
+            return write_failure(errors, warnings, retry_allowed)
 
         target_dir = FILES_ROOT / game_id
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -375,13 +404,20 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         "languages": languages,
         "achievement_count": len(rows),
         "warnings": warnings,
+        "issue_number": issue_number,
     }
     Path("submission_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result
 
 
-def write_failure(errors: list[str], warnings: list[str]) -> dict[str, Any]:
-    result = {"ok": False, "errors": errors, "warnings": warnings}
+def write_failure(errors: list[str], warnings: list[str], retry_allowed: bool) -> dict[str, Any]:
+    result = {
+        "ok": False,
+        "errors": errors,
+        "warnings": warnings,
+        "retry_allowed": retry_allowed,
+        "close_issue": not retry_allowed,
+    }
     Path("submission_result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(1)
 
