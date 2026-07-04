@@ -1,14 +1,16 @@
 # Contributing Shared Achievement Translations
 
+[简体中文](CONTRIBUTING_CN.md)
+
 This repository accepts community-submitted Steam achievement schema files for the public translation library in `achievement-library/`.
 
 ## Before You Submit
 
 Check whether the same Steam app ID is already present:
 
-- Search `achievement-library/index.json` for the numeric Steam app ID.
+- Search `achievement-library/README.md` for the numeric Steam app ID or game name.
 - Search open pull requests for the same app ID or `UserGameStatsSchema_<game_id>.bin`.
-- Search open issues with the `translation-submission` label for the same app ID.
+- Search open issues with the `translation-contribution` label for the same app ID.
 
 Please do not submit a duplicate if the same game is already in the library, already in PR review, or already waiting in an open submission issue.
 
@@ -23,7 +25,7 @@ Please do not submit a duplicate if the same game is already in the library, alr
 
 ## How Review Works
 
-Open a `Share a translated achievement schema` issue and attach the `.bin` file. The GitHub Action will:
+Open the English or Chinese translation contribution issue template and attach the `.bin` file. The GitHub Action will:
 
 - download the uploaded file;
 - verify that the store URL, game ID, and file name match;
@@ -34,14 +36,20 @@ Open a `Share a translated achievement schema` issue and attach the `.bin` file.
 
 The generated pull request contains the updated library index, the submitted schema file, and a review table listing every achievement ID with each submitted language's achievement name and description. A maintainer still performs final review before merge.
 
+## Labels
+
+- Translation library submissions use `translation-contribution`. Only this label is reviewed by the submission bot.
+- Skill bug reports use `skill-bug`. These issues do not trigger translation-file review.
+
 ## Library Layout
 
 ```text
 achievement-library/
+├── README.md
 ├── index.json
 └── files/
     └── <game_id>/
         └── UserGameStatsSchema_<game_id>.bin
 ```
 
-`index.json` is the user-facing lookup index. It records the game name, Steam app ID, store URL, supported languages, achievement count, schema file path, and file hash for each accepted submission.
+`achievement-library/README.md` is the user-facing lookup index. It is designed for GitHub browsing and browser search by game name, Steam app ID, or language code. `index.json` is the machine-readable index for scripts and automation.

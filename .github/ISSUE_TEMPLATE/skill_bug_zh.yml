@@ -1,0 +1,39 @@
+name: 反馈 skill 问题
+description: 报告 Steam Achievement Localizer skill 或脚本的问题。
+title: "[Skill bug]: "
+labels:
+  - skill-bug
+body:
+  - type: textarea
+    id: bug-summary
+    attributes:
+      label: 问题概述
+      description: 哪里出错了？
+      placeholder: 这个 skill 在……时失败
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 请包含命令、输入类型、目标语言和相关报告输出。
+      placeholder: |
+        1. 运行……
+        2. 出现……
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      description: 原本应该发生什么？
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志或 report JSON
+      description: 发布前请移除个人路径或隐私数据。
+      render: text
+    validations:
+      required: false

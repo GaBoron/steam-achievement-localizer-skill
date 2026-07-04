@@ -1,0 +1,39 @@
+name: Report a skill bug
+description: Report a problem with the Steam Achievement Localizer skill or scripts.
+title: "[Skill bug]: "
+labels:
+  - skill-bug
+body:
+  - type: textarea
+    id: bug-summary
+    attributes:
+      label: Bug summary
+      description: What went wrong?
+      placeholder: The skill failed when...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Include commands, input type, target language, and any relevant report output.
+      placeholder: |
+        1. Run ...
+        2. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or report JSON
+      description: Remove personal paths or private data before posting.
+      render: text
+    validations:
+      required: false

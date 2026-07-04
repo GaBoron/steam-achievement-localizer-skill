@@ -15,16 +15,18 @@ Steam 文件前做检查。
 
 这个仓库也包含用户投稿的 Steam 成就翻译库：
 
-- 查找索引：`achievement-library/index.json`
+- 用户查找索引：`achievement-library/README.md`
+- 机器可读索引：`achievement-library/index.json`
 - 成就文件：`achievement-library/files/<game_id>/UserGameStatsSchema_<game_id>.bin`
 
-如果你想分享已经翻译好的成就 schema，请创建 `Share a translated achievement
-schema` issue，并上传对应的 `UserGameStatsSchema_<game_id>.bin` 文件。后台机器人会
+如果你想分享已经翻译好的成就 schema，请使用英文或中文翻译投稿 issue 模板，并上传
+对应的 `UserGameStatsSchema_<game_id>.bin` 文件。后台机器人会
 检查 issue 中的游戏 ID、商店地址、文件名、Steam Binary KeyValues 格式，以及你
 选择的语言字段是否都存在。初审通过后，机器人会自动创建 PR，包含更新后的索引、
 上传的成就文件，以及每个成就 ID 对应各语言成就名和描述的审核表格。
 
-投稿前的查重方法和规范见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+投稿前的查重方法和规范见 [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)。skill 本身的
+问题请使用单独的 skill bug issue 模板。
 
 ## 安装
 

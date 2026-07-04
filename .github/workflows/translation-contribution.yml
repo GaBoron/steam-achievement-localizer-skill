@@ -1,4 +1,4 @@
-name: Translation submission review
+name: Translation contribution review
 
 on:
   issues:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   review:
-    if: contains(github.event.issue.labels.*.name, 'translation-submission') || startsWith(github.event.issue.title, '[Translation submission]')
+    if: contains(github.event.issue.labels.*.name, 'translation-contribution')
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -24,6 +24,18 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
+
+      - name: Prepare submission branch
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          BRANCH="translation-library/issue-$ISSUE_NUMBER"
+          git fetch origin "$BRANCH" || true
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout -b "$BRANCH"
+          fi
 
       - name: Validate submission and update library files
         id: validate
@@ -69,13 +81,7 @@ jobs:
           PR_TITLE="$(cat pr_title.txt)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin "$BRANCH" || true
-          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-            git checkout -B "$BRANCH" "origin/$BRANCH"
-          else
-            git checkout -b "$BRANCH"
-          fi
-          git add achievement-library/index.json achievement-library/files
+          git add achievement-library/README.md achievement-library/index.json achievement-library/files
           if git diff --cached --quiet; then
             echo "No library changes to commit."
           else

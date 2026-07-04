@@ -21,6 +21,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from steam_bkv_tool import achievement_rows, load_schema, serialize, sha256  # noqa: E402
 
 INDEX_PATH = REPO_ROOT / "achievement-library" / "index.json"
+HUMAN_INDEX_PATH = REPO_ROOT / "achievement-library" / "README.md"
 FILES_ROOT = REPO_ROOT / "achievement-library" / "files"
 MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024
 LANGUAGE_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
@@ -56,6 +57,13 @@ def first_line(value: str) -> str:
         text = line.strip()
         if text and text != "_No response_":
             return text
+    return ""
+
+
+def field_value(fields: dict[str, str], names: list[str]) -> str:
+    for name in names:
+        if name in fields:
+            return fields[name]
     return ""
 
 
@@ -114,6 +122,47 @@ def write_index(index: dict[str, Any]) -> None:
     INDEX_PATH.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def write_human_index(index: dict[str, Any]) -> None:
+    entries = sorted(index.get("entries", []), key=lambda item: int(item.get("game_id", 0)))
+    lines = [
+        "# Community Achievement Translation Library",
+        "",
+        "Browse this page first when checking whether a game has already been submitted. Use your browser search on this page for the Steam app ID, game name, or language code.",
+        "",
+        "## Games",
+        "",
+    ]
+    if entries:
+        lines.extend([
+            "| Steam app ID | Game | Languages | Achievements | Schema file | Store |",
+            "| --- | --- | --- | ---: | --- | --- |",
+        ])
+        for entry in entries:
+            game_id = str(entry.get("game_id", ""))
+            game_name = escape_table(str(entry.get("game_name", "")))
+            languages = escape_table(", ".join(entry.get("languages", [])))
+            count = str(entry.get("achievement_count", ""))
+            schema_file = str(entry.get("schema_file", ""))
+            schema_link = schema_file.removeprefix("achievement-library/")
+            store_url = str(entry.get("store_url", ""))
+            lines.append(f"| `{game_id}` | {game_name} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |")
+    else:
+        lines.append("No games have been accepted yet.")
+    lines.extend([
+        "",
+        "## Search Tips",
+        "",
+        "- Search this page for a Steam app ID such as `123456`.",
+        "- Search by game name if you do not know the app ID.",
+        "- Search by Steam language code such as `schinese`, `tchinese`, `japanese`, or `koreana`.",
+        "",
+        "## Machine Index",
+        "",
+        "Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.",
+    ])
+    HUMAN_INDEX_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def existing_entry(index: dict[str, Any], game_id: str) -> dict[str, Any] | None:
     for entry in index.get("entries", []):
         if str(entry.get("game_id")) == game_id:
@@ -150,8 +199,12 @@ def open_duplicate_warnings(repo: str, token: str | None, game_id: str, issue_nu
         number = int(item.get("number", 0))
         if number == issue_number:
             continue
-        kind = "pull request" if item.get("pull_request") else "issue"
-        warnings.append(f"Open {kind} #{number} also mentions Steam app ID {game_id}: {item.get('html_url')}")
+        if item.get("pull_request"):
+            warnings.append(f"Open pull request #{number} also mentions Steam app ID {game_id}: {item.get('html_url')}")
+            continue
+        labels = {label.get("name") for label in item.get("labels", []) if isinstance(label, dict)}
+        if "translation-contribution" in labels:
+            warnings.append(f"Open translation contribution issue #{number} also mentions Steam app ID {game_id}: {item.get('html_url')}")
     return warnings
 
 
@@ -208,11 +261,14 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
     errors: list[str] = []
     warnings: list[str] = []
 
-    game_name = first_line(fields.get("Game name", ""))
-    game_id = first_line(fields.get("Steam app ID", ""))
-    store_url = first_line(fields.get("Steam store URL", ""))
-    languages = sorted(set(parse_checked_languages(fields.get("Languages included in the uploaded file", "")) + parse_extra_languages(fields.get("Additional Steam language codes", ""))))
-    attachment = extract_attachment(fields.get("Achievement schema file", ""))
+    game_name = first_line(field_value(fields, ["Game name", "游戏名"]))
+    game_id = first_line(field_value(fields, ["Steam app ID"]))
+    store_url = first_line(field_value(fields, ["Steam store URL", "Steam 商店地址"]))
+    languages = sorted(set(
+        parse_checked_languages(field_value(fields, ["Languages included in the uploaded file", "上传文件包含的语言"]))
+        + parse_extra_languages(field_value(fields, ["Additional Steam language codes", "其他 Steam 语言代码"]))
+    ))
+    attachment = extract_attachment(field_value(fields, ["Achievement schema file", "成就 schema 文件"]))
 
     if not game_name:
         errors.append("Game name is required.")
@@ -232,8 +288,9 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
         errors.append("Attach exactly one UserGameStatsSchema_<game_id>.bin file.")
 
     index = load_index()
-    if game_id and existing_entry(index, game_id):
-        errors.append(f"Steam app ID {game_id} already exists in achievement-library/index.json.")
+    existing = existing_entry(index, game_id) if game_id else None
+    if existing and existing.get("source_issue") != issue.get("html_url"):
+        errors.append(f"Steam app ID {game_id} already exists in achievement-library/README.md and achievement-library/index.json.")
     if game_id and repo:
         duplicate_warnings = open_duplicate_warnings(repo, token, game_id, issue_number)
         blocking_duplicates = [item for item in duplicate_warnings if item.startswith("Open ")]
@@ -302,8 +359,9 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None) -> 
     entries.append(entry)
     index["entries"] = sorted(entries, key=lambda item: int(item.get("game_id", 0)))
     write_index(index)
+    write_human_index(index)
 
-    branch = f"translation-library/{game_id}-issue-{issue_number}"
+    branch = f"translation-library/issue-{issue_number}"
     pr_title = f"Add achievement translations for {game_name} ({game_id})"
     pr_body = build_pr_body(entry, coverage, nodes, languages, issue.get("html_url", ""))
     Path("pr_title.txt").write_text(pr_title + "\n", encoding="utf-8")
@@ -354,7 +412,7 @@ def build_pr_body(entry: dict[str, Any], coverage: dict[str, int], nodes: list[A
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Validate a translation-submission issue and prepare a library PR.")
+    parser = argparse.ArgumentParser(description="Validate a translation-contribution issue and prepare a library PR.")
     parser.add_argument("--event", type=Path, required=True, help="GitHub event JSON path")
     parser.add_argument("--repo", default=os.environ.get("GITHUB_REPOSITORY", ""), help="owner/repo for duplicate checks")
     parser.add_argument("--token", default=os.environ.get("GITHUB_TOKEN"), help="GitHub token for downloads and duplicate checks")

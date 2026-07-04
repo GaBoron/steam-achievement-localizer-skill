@@ -1,0 +1,91 @@
+name: 分享已翻译的成就文件
+description: 上传本地化后的 Steam UserGameStatsSchema_*.bin 文件供审核。
+title: "[Translation contribution]: "
+labels:
+  - translation-contribution
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢分享 Steam 成就翻译文件。
+
+        提交前请先检查 `achievement-library/README.md` 中的用户可读索引、当前开放 PR，以及带有 `translation-contribution` 标签的开放 issue，确认相同 Steam app ID 尚未投稿。
+        请上传已经包含所选语言字段的原始 `UserGameStatsSchema_<game_id>.bin` 文件。
+  - type: input
+    id: game-name
+    attributes:
+      label: 游戏名
+      description: Steam 商店展示的游戏名称。
+      placeholder: 游戏名
+    validations:
+      required: true
+  - type: input
+    id: game-id
+    attributes:
+      label: Steam app ID
+      description: Steam 商店地址中的数字 app ID。
+      placeholder: "123456"
+    validations:
+      required: true
+  - type: input
+    id: store-url
+    attributes:
+      label: Steam 商店地址
+      description: 这个游戏的 Steam 商店页面。
+      placeholder: https://store.steampowered.com/app/123456/Game_Name/
+    validations:
+      required: true
+  - type: checkboxes
+    id: languages
+    attributes:
+      label: 上传文件包含的语言
+      description: 请选择上传文件中已经完整包含的所有 Steam 语言代码。
+      options:
+        - label: schinese - 简体中文
+        - label: tchinese - 繁体中文
+        - label: japanese - 日语
+        - label: koreana - 韩语
+        - label: english - 英语
+        - label: french - 法语
+        - label: italian - 意大利语
+        - label: german - 德语
+        - label: spanish - 西班牙语（西班牙）
+        - label: latam - 西班牙语（拉美）
+        - label: russian - 俄语
+        - label: polish - 波兰语
+        - label: portuguese - 葡萄牙语
+        - label: brazilian - 葡萄牙语（巴西）
+        - label: turkish - 土耳其语
+        - label: ukrainian - 乌克兰语
+        - label: czech - 捷克语
+        - label: dutch - 荷兰语
+        - label: swedish - 瑞典语
+        - label: danish - 丹麦语
+        - label: finnish - 芬兰语
+        - label: norwegian - 挪威语
+        - label: hungarian - 匈牙利语
+        - label: romanian - 罗马尼亚语
+        - label: greek - 希腊语
+        - label: bulgarian - 保加利亚语
+        - label: thai - 泰语
+        - label: vietnamese - 越南语
+        - label: indonesian - 印度尼西亚语
+        - label: arabic - 阿拉伯语
+    validations:
+      required: true
+  - type: input
+    id: additional-languages
+    attributes:
+      label: 其他 Steam 语言代码
+      description: 如果文件中包含上面没有列出的 Steam 语言代码，请用逗号分隔填写。
+      placeholder: 无
+    validations:
+      required: false
+  - type: textarea
+    id: schema-file
+    attributes:
+      label: 成就 schema 文件
+      description: 请拖放上传一个 `UserGameStatsSchema_<game_id>.bin` 文件。
+      placeholder: 上传 UserGameStatsSchema_123456.bin
+    validations:
+      required: true
