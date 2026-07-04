@@ -23,6 +23,7 @@ from steam_bkv_tool import achievement_rows, load_schema, serialize, sha256  # n
 
 INDEX_PATH = REPO_ROOT / "achievement-library" / "index.json"
 HUMAN_INDEX_PATH = REPO_ROOT / "achievement-library" / "README.md"
+HUMAN_INDEX_EN_PATH = REPO_ROOT / "achievement-library" / "README_EN.md"
 FILES_ROOT = REPO_ROOT / "achievement-library" / "files"
 MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024
 MAX_SCHEMA_BYTES = 32 * 1024 * 1024
@@ -180,8 +181,20 @@ def write_index(index: dict[str, Any]) -> None:
 
 def write_human_index(index: dict[str, Any]) -> None:
     entries = sorted(index.get("entries", []), key=lambda item: int(item.get("game_id", 0)))
-    lines = [
+    zh_lines = [
+        "# 社区成就翻译库",
+        "",
+        "简体中文 | [English](README_EN.md)",
+        "",
+        "查询某个游戏是否已经投稿时，优先查看本页。你可以直接用浏览器搜索 Steam app ID、游戏名或语言代码。",
+        "",
+        "## 游戏列表",
+        "",
+    ]
+    en_lines = [
         "# Community Achievement Translation Library",
+        "",
+        "[简体中文](README.md) | English",
         "",
         "Browse this page first when checking whether a game has already been submitted. Use your browser search on this page for the Steam app ID, game name, or language code.",
         "",
@@ -189,7 +202,11 @@ def write_human_index(index: dict[str, Any]) -> None:
         "",
     ]
     if entries:
-        lines.extend([
+        zh_lines.extend([
+            "| Steam app ID | 游戏 | 支持语言 | 成就数 | 成就文件 | 商店 |",
+            "| --- | --- | --- | ---: | --- | --- |",
+        ])
+        en_lines.extend([
             "| Steam app ID | Game | Languages | Achievements | Schema file | Store |",
             "| --- | --- | --- | ---: | --- | --- |",
         ])
@@ -201,10 +218,25 @@ def write_human_index(index: dict[str, Any]) -> None:
             schema_file = str(entry.get("schema_file", ""))
             schema_link = schema_file.removeprefix("achievement-library/")
             store_url = str(entry.get("store_url", ""))
-            lines.append(f"| `{game_id}` | {game_name} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |")
+            row = f"| `{game_id}` | {game_name} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |"
+            zh_lines.append(row)
+            en_lines.append(row)
     else:
-        lines.append("No games have been accepted yet.")
-    lines.extend([
+        zh_lines.append("暂无已收录游戏。")
+        en_lines.append("No games have been accepted yet.")
+    zh_lines.extend([
+        "",
+        "## 搜索建议",
+        "",
+        "- 搜索 Steam app ID，例如 `123456`。",
+        "- 不知道 app ID 时，搜索游戏名。",
+        "- 搜索 Steam 语言代码，例如 `schinese`、`tchinese`、`japanese` 或 `koreana`。",
+        "",
+        "## 机器索引",
+        "",
+        "自动化脚本读取 `index.json`。普通用户应优先使用这个 Markdown 索引快速查找。",
+    ])
+    en_lines.extend([
         "",
         "## Search Tips",
         "",
@@ -216,7 +248,8 @@ def write_human_index(index: dict[str, Any]) -> None:
         "",
         "Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.",
     ])
-    HUMAN_INDEX_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    HUMAN_INDEX_PATH.write_text("\n".join(zh_lines) + "\n", encoding="utf-8")
+    HUMAN_INDEX_EN_PATH.write_text("\n".join(en_lines) + "\n", encoding="utf-8")
 
 
 def existing_entry(index: dict[str, Any], game_id: str) -> dict[str, Any] | None:

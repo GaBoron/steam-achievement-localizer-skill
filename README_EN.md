@@ -14,7 +14,7 @@ you replace anything in Steam.
 
 ## Quick Links
 
-- **Find existing submissions**: [open the community translation library index](achievement-library/README.md) and search by game name, Steam app ID, or language code.
+- **Find existing submissions**: [open the community translation library index](achievement-library/README_EN.md) and search by game name, Steam app ID, or language code.
 - **Submit a translation contribution**: [create a translation contribution issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=translation_contribution_en.yml) and upload `UserGameStatsSchema_<game_id>.zip`.
 - **Report a skill bug**: [create a skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_en.yml).
 
@@ -22,7 +22,7 @@ you replace anything in Steam.
 
 This repository also hosts a user-submitted achievement translation library:
 
-- user lookup index: `achievement-library/README.md`
+- user lookup index: `achievement-library/README_EN.md`
 - machine-readable index: `achievement-library/index.json`
 - schema files: `achievement-library/files/<game_id>/UserGameStatsSchema_<game_id>.bin`
 

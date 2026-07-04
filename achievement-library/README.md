@@ -1,17 +1,19 @@
-# Community Achievement Translation Library
+# 社区成就翻译库
 
-Browse this page first when checking whether a game has already been submitted. Use your browser search on this page for the Steam app ID, game name, or language code.
+简体中文 | [English](README_EN.md)
 
-## Games
+查询某个游戏是否已经投稿时，优先查看本页。你可以直接用浏览器搜索 Steam app ID、游戏名或语言代码。
 
-No games have been accepted yet.
+## 游戏列表
 
-## Search Tips
+暂无已收录游戏。
 
-- Search this page for a Steam app ID such as `123456`.
-- Search by game name if you do not know the app ID.
-- Search by Steam language code such as `schinese`, `tchinese`, `japanese`, or `koreana`.
+## 搜索建议
 
-## Machine Index
+- 搜索 Steam app ID，例如 `123456`。
+- 不知道 app ID 时，搜索游戏名。
+- 搜索 Steam 语言代码，例如 `schinese`、`tchinese`、`japanese` 或 `koreana`。
 
-Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.
+## 机器索引
+
+自动化脚本读取 `index.json`。普通用户应优先使用这个 Markdown 索引快速查找。

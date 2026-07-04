@@ -59,10 +59,11 @@
 ```text
 achievement-library/
 ├── README.md
+├── README_EN.md
 ├── index.json
 └── files/
     └── <game_id>/
         └── UserGameStatsSchema_<game_id>.bin
 ```
 
-`achievement-library/README.md` 是普通用户优先查看的索引，可以直接在 GitHub 页面中搜索游戏名或 Steam app ID。`index.json` 是给脚本和自动化读取的机器索引。
+`achievement-library/README.md` 是中文默认用户索引，`achievement-library/README_EN.md` 是英文索引。两者都可以直接在 GitHub 页面中搜索游戏名、Steam app ID 或语言代码。`index.json` 是给脚本和自动化读取的机器索引。

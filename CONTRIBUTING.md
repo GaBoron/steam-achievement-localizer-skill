@@ -8,7 +8,7 @@ This repository accepts community-submitted Steam achievement schema files for t
 
 Check whether the same Steam app ID is already present:
 
-- Search `achievement-library/README.md` for the numeric Steam app ID or game name.
+- Search `achievement-library/README_EN.md` for the numeric Steam app ID or game name.
 - Search open pull requests for the same app ID or `UserGameStatsSchema_<game_id>.bin`.
 - Search open issues with the `translation-contribution` label for the same app ID.
 
@@ -59,10 +59,11 @@ After a maintainer approves the generated review PR, the bot thanks the contribu
 ```text
 achievement-library/
 ├── README.md
+├── README_EN.md
 ├── index.json
 └── files/
     └── <game_id>/
         └── UserGameStatsSchema_<game_id>.bin
 ```
 
-`achievement-library/README.md` is the user-facing lookup index. It is designed for GitHub browsing and browser search by game name, Steam app ID, or language code. `index.json` is the machine-readable index for scripts and automation.
+`achievement-library/README_EN.md` is the English user-facing lookup index. `achievement-library/README.md` is the Chinese default. Both are designed for GitHub browsing and browser search by game name, Steam app ID, or language code. `index.json` is the machine-readable index for scripts and automation.

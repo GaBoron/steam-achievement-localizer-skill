@@ -95,7 +95,7 @@ jobs:
           PR_TITLE="$(cat pr_title.txt)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add achievement-library/README.md achievement-library/index.json achievement-library/files
+          git add achievement-library/README.md achievement-library/README_EN.md achievement-library/index.json achievement-library/files
           if git diff --cached --quiet; then
             echo "No library changes to commit."
           else
