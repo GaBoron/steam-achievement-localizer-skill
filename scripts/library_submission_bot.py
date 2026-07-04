@@ -12,7 +12,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -205,7 +205,13 @@ def write_human_index(index: dict[str, Any]) -> None:
         "",
         "简体中文 | [English](README_EN.md)",
         "",
-        "查询某个游戏是否已经投稿时，优先查看本页。列表按游戏名拼音或字母排序，你可以直接用浏览器搜索 Steam app ID、游戏名、贡献者或语言代码。",
+        "## 重要提示",
+        "",
+        "- 查询某个游戏是否已经投稿时，优先查看本页。列表按游戏名拼音或字母排序，你可以直接用浏览器搜索 Steam app ID、游戏名、贡献者或语言代码。",
+        "- 文件列只显示文件名；点击文件名会从当前 `main` 分支直接下载对应的 `UserGameStatsSchema_*.bin` 文件。",
+        "- 自动化脚本读取 `index.json`。普通用户应优先使用这个 Markdown 索引快速查找。",
+        "- 原始游戏内容、成就文本、Steam schema 内容及相关文件版权归对应游戏开发商、发行商及其他权利方所有。",
+        "- 投稿翻译文本版权归表格中对应贡献者所有；投稿即表示允许本仓库展示、索引并分发其提交的成就文件用于社区本地化。",
         "",
         "## 游戏列表",
         "",
@@ -215,7 +221,13 @@ def write_human_index(index: dict[str, Any]) -> None:
         "",
         "[简体中文](README.md) | English",
         "",
-        "Browse this page first when checking whether a game has already been submitted. Games are sorted by game name using pinyin or alphabetical order. Use your browser search on this page for the Steam app ID, game name, contributor, or language code.",
+        "## Important Notes",
+        "",
+        "- Browse this page first when checking whether a game has already been submitted. Games are sorted by game name using pinyin or alphabetical order. Use your browser search on this page for the Steam app ID, game name, contributor, or language code.",
+        "- The file column shows only the file name. Click the file name to directly download the matching `UserGameStatsSchema_*.bin` file from the current `main` branch.",
+        "- Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.",
+        "- Original game content, achievement text, Steam schema content, and related files remain the property of the corresponding game developers, publishers, and other rights holders.",
+        "- Submitted translation text remains the property of the listed contributor. By contributing, contributors allow this repository to display, index, and distribute the submitted achievement file for community localization.",
         "",
         "## Games",
         "",
@@ -237,38 +249,15 @@ def write_human_index(index: dict[str, Any]) -> None:
             languages = escape_table(", ".join(entry.get("languages", [])))
             count = str(entry.get("achievement_count", ""))
             schema_file = str(entry.get("schema_file", ""))
-            schema_link = schema_file.removeprefix("achievement-library/")
+            schema_name = escape_table(PurePosixPath(schema_file).name)
+            schema_link = schema_download_url(schema_file)
             store_url = str(entry.get("store_url", ""))
-            row = f"| `{game_id}` | {game_name} | {contributor_text} | {languages} | {count} | [`{schema_file}`]({schema_link}) | [Steam]({store_url}) |"
+            row = f"| `{game_id}` | {game_name} | {contributor_text} | {languages} | {count} | [`{schema_name}`]({schema_link}) | [Steam]({store_url}) |"
             zh_lines.append(row)
             en_lines.append(row)
     else:
         zh_lines.append("暂无已收录游戏。")
         en_lines.append("No games have been accepted yet.")
-    zh_lines.extend([
-        "",
-        "## 搜索建议",
-        "",
-        "- 搜索 Steam app ID，例如 `123456`。",
-        "- 不知道 app ID 时，搜索游戏名。",
-        "- 搜索 Steam 语言代码，例如 `schinese`、`tchinese`、`japanese` 或 `koreana`。",
-        "",
-        "## 机器索引",
-        "",
-        "自动化脚本读取 `index.json`。普通用户应优先使用这个 Markdown 索引快速查找。",
-    ])
-    en_lines.extend([
-        "",
-        "## Search Tips",
-        "",
-        "- Search this page for a Steam app ID such as `123456`.",
-        "- Search by game name if you do not know the app ID.",
-        "- Search by Steam language code such as `schinese`, `tchinese`, `japanese`, or `koreana`.",
-        "",
-        "## Machine Index",
-        "",
-        "Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.",
-    ])
     HUMAN_INDEX_PATH.write_text("\n".join(zh_lines) + "\n", encoding="utf-8")
     HUMAN_INDEX_EN_PATH.write_text("\n".join(en_lines) + "\n", encoding="utf-8")
 
@@ -279,6 +268,12 @@ def contributor_markdown_link(contributor: str) -> str:
     escaped = escape_table(contributor)
     encoded = urllib.parse.quote(contributor, safe="")
     return f"[@{escaped}](https://github.com/{encoded})"
+
+
+def schema_download_url(schema_file: str) -> str:
+    normalized = schema_file.replace("\\", "/").lstrip("/")
+    encoded_path = urllib.parse.quote(normalized, safe="/")
+    return f"https://raw.githubusercontent.com/GaBoron/steam-achievement-localizer-skill/main/{encoded_path}"
 
 
 def upsert_index_entry(entry: dict[str, Any]) -> None:
