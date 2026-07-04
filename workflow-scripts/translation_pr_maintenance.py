@@ -175,6 +175,14 @@ def pr_body_field(body: str, label: str) -> str:
     return strip_inline_code(match.group(1)) if match else ""
 
 
+def pr_body_field_any(body: str, labels: list[str]) -> str:
+    for label in labels:
+        value = pr_body_field(body, label)
+        if value:
+            return value
+    return ""
+
+
 def entry_from_merged_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str, Any]:
     body = str(pr.get("body") or "")
     game_id = pr_body_field(body, "Steam app ID")
@@ -186,7 +194,7 @@ def entry_from_merged_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str,
     data, nodes = load_schema(schema_path)
     rows = achievement_rows(nodes, languages[0] if languages else "english")
     source_issue = pr_body_field(body, "Source issue")
-    contributor = contributor_from_source_issue(repo, token, source_issue) or pr_body_field(body, "Contributor").lstrip("@")
+    contributor = contributor_from_source_issue(repo, token, source_issue) or pr_body_field_any(body, ["Contributor / 贡献者", "Contributor"]).lstrip("@")
     entry = {
         "game_name": pr_body_field(body, "Game name"),
         "game_id": game_id,

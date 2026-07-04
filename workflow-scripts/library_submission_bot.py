@@ -312,6 +312,17 @@ def github_api_json(url: str, token: str | None) -> dict[str, Any] | None:
         return None
 
 
+def issue_author_login(repo: str, token: str | None, issue: dict[str, Any]) -> str:
+    login = str((issue.get("user") or {}).get("login") or "")
+    if login or not repo:
+        return login
+    issue_number = issue.get("number")
+    if not issue_number:
+        return ""
+    data = github_api_json(f"https://api.github.com/repos/{repo}/issues/{issue_number}", token)
+    return str(((data or {}).get("user") or {}).get("login") or "")
+
+
 def pull_request_matches_source_issue(repo: str, token: str | None, pr_number: int, issue_number: int) -> bool:
     data = github_api_json(f"https://api.github.com/repos/{repo}/pulls/{pr_number}", token)
     if not data:
@@ -415,11 +426,14 @@ def force_warning(message: str) -> str:
 def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, write_indexes: bool = False) -> dict[str, Any]:
     issue = event["issue"]
     issue_number = int(issue["number"])
-    contributor_id = str((issue.get("user") or {}).get("login") or "")
+    contributor_id = issue_author_login(repo, token, issue)
     fields = parse_issue_form(issue.get("body") or "")
     problems: list[ReviewProblem] = []
     warnings: list[str] = []
     force_review = event_force_review(event)
+
+    if not contributor_id:
+        problems.append(ReviewProblem("Could not resolve the contribution issue author from the GitHub event or API."))
 
     game_name = first_line(field_value(fields, ["Game name", "游戏名"]))
     game_id = first_line(field_value(fields, ["Steam app ID"]))
@@ -583,7 +597,7 @@ def build_pr_body(
     coverage_lines = "\n".join(f"- `{language}`: {count}/{entry['achievement_count']} achievements" for language, count in coverage.items())
     table = build_review_table(nodes, languages)
     contributor_id = str(entry.get("contributor_id") or "")
-    contributor_line = f"- Contributor: @{contributor_id}\n" if contributor_id else ""
+    contributor_line = f"- Contributor / 贡献者: @{contributor_id}\n" if contributor_id else "- Contributor / 贡献者: unknown\n"
     warning_section = ""
     if warnings or force_review:
         warning_lines = "\n".join(f"- {escape_table(item)}" for item in warnings) if warnings else "- No warning details were recorded."
