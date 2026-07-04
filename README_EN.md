@@ -163,7 +163,7 @@ The community translation library lives in `achievement-library/`. It contains G
 
 The submission bot checks issue fields, Steam store metadata, file names, ZIP structure, Steam Binary KeyValues roundtrip, selected language coverage, and duplicate submissions. After first review passes, the bot opens a PR; after maintainer review and merge, the repository updates `achievement-library/index.json` and both Markdown indexes.
 
-Submission rules and maintainer commands are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+Submission rules and maintainer commands are documented in [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md).
 
 ## Acknowledgements
 

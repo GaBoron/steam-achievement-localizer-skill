@@ -163,7 +163,7 @@ python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-lang
 
 投稿机器人会检查 issue 字段、Steam 商店地址、文件名、ZIP 结构、Steam Binary KeyValues roundtrip、所选语言覆盖率和重复投稿。初审通过后，机器人会创建 PR；维护者最终审核合并后，仓库会更新 `achievement-library/index.json` 和两个 Markdown 索引。
 
-投稿规范和维护命令见 [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)。
+投稿规范和维护命令见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 致谢
 

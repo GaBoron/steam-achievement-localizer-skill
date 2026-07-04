@@ -1,91 +1,91 @@
-# Contributing Shared Achievement Translations
+# 贡献共享成就翻译
 
-English | [简体中文](CONTRIBUTING_CN.md)
+简体中文 | [English](CONTRIBUTING.md)
 
-This repository accepts community-submitted Steam achievement schema files for the public translation library in `achievement-library/`. The contribution flow is handled by GitHub issues, GitHub Actions, and maintainer review; normal local skill usage does not automatically submit anything to the repository.
+本仓库接受用户投稿的 Steam 成就 schema 文件，用于维护 `achievement-library/` 中的公开翻译库。投稿流程由 GitHub issue、GitHub Actions 和维护者审核共同完成；普通 skill 本地化流程不会自动向仓库投稿。
 
-## Before You Submit
+## 提交前检查
 
-Check whether the same Steam app ID already exists:
+请先确认同一个 Steam app ID 是否已经存在：
 
-- Search `achievement-library/README_EN.md` for the numeric Steam app ID, game name, contributor, or language code.
-- Search open pull requests for the same app ID or `UserGameStatsSchema_<game_id>.bin`.
-- Search open issues with the `translation-contribution` label.
+- 在 `achievement-library/README.md` 中搜索数字 Steam app ID、游戏名、贡献者或语言代码。
+- 检查开放 PR 中是否已有相同 app ID 或 `UserGameStatsSchema_<game_id>.bin`。
+- 检查带有 `translation-contribution` 标签的开放 issue。
 
-Please do not submit a duplicate if the same game is already in the library, already in PR review, or already waiting in an open submission issue.
+如果同一个游戏已经在库中、已经处于 PR 审核中，或已经在开放投稿 issue 中，请不要重复提交。
 
-## Submission Rules
+## 投稿规范
 
-- Upload a ZIP named `UserGameStatsSchema_<game_id>.zip` because GitHub issues do not accept `.bin` attachments directly.
-- The ZIP must contain exactly one real Steam schema file named `UserGameStatsSchema_<game_id>.bin`.
-- The game ID in the issue, Steam store URL, and uploaded file name must match.
-- Select only languages that are fully present in the uploaded file.
-- Every selected language must include both achievement name and description fields for every achievement.
-- Keep the schema file as Steam Binary KeyValues. Do not convert it to JSON, CSV, or text before zipping.
-- Do not upload files containing private account data, secrets, tokens, or unrelated local files.
+- 上传名为 `UserGameStatsSchema_<game_id>.zip` 的 ZIP，因为 GitHub issue 不能直接接收 `.bin` 附件。
+- ZIP 内必须只包含一个真实 Steam schema 文件，文件名必须是 `UserGameStatsSchema_<game_id>.bin`。
+- issue 中的游戏 ID、Steam 商店地址和上传文件名必须一致。
+- 只选择上传文件中已经完整包含的语言。
+- 每个选择的语言都必须为每个成就提供成就名和成就描述字段。
+- 保持 schema 文件为 Steam Binary KeyValues 格式，不要先转换成 JSON、CSV 或文本再压缩。
+- 不要上传包含私人账号数据、密钥、令牌或无关本地文件的内容。
 
-## Review Flow
+## 审核流程
 
-Open the English or Chinese translation contribution issue template and attach the `.zip` file. GitHub Actions will:
+使用英文或中文翻译投稿 issue 模板并附上 `.zip` 文件。GitHub Action 会执行以下检查和维护步骤：
 
-- Download the uploaded file.
-- Verify that the Steam store URL, game ID, ZIP name, and schema file name match.
-- Unpack the ZIP and require exactly one schema file inside it.
-- Parse the file as Steam Binary KeyValues and require byte-identical roundtrip serialization.
-- Verify that the selected language fields are present for every achievement.
-- Check whether the game is already in the library or in another open submission.
-- Add the `translation-contribution` label if needed, then freeze the issue title and body so submitted fields cannot be changed afterward.
-- Create a pull request after first review passes.
-- Thank the contributor and close the source issue after the PR is ready.
+- 下载上传文件。
+- 检查 Steam 商店地址、游戏 ID、ZIP 文件名和 schema 文件名是否匹配。
+- 解压 ZIP，并要求其中只有一个 schema 文件。
+- 按 Steam Binary KeyValues 解析文件，并要求序列化后字节完全一致。
+- 检查所选语言字段是否覆盖所有成就。
+- 检查游戏是否已经在库中，或是否已有开放投稿。
+- 为翻译投稿 issue 补上 `translation-contribution` 标签，并冻结 issue 标题和正文，防止提交后修改已提交字段。
+- 初审通过后自动创建 PR。
+- 在 PR 准备好后感谢投稿人并关闭来源 issue。
 
-The generated pull request contains only the submitted schema file plus a review table listing every achievement ID with each submitted language's achievement name and description. After the pull request is merged, maintenance scripts update `achievement-library/index.json` and regenerate both Markdown indexes from that JSON. A maintainer still performs final review before merge.
+生成的 PR 只包含投稿 schema 文件，以及每个成就 ID 对应各投稿语言成就名和描述的审核表格。PR 合并后，维护脚本会更新 `achievement-library/index.json`，并根据这个 JSON 重新生成中文和英文 Markdown 索引。最终是否合并仍由维护者审核决定。
 
-The pull request is opened by GitHub Actions, so contributors cannot directly change the generated branch, submitted file, or PR description. The PR body and bot comments mention the original contributor so they can follow the review without receiving duplicate issue comments.
+PR 由 GitHub Actions 创建，投稿人不能直接修改生成分支、投稿文件或 PR 描述。PR 正文和机器人评论会提及原投稿人，让投稿人可以关注审核进度，同时避免在来源 issue 中重复提醒。
 
-## Fixing a Submitted File
+## 修正已提交文件
 
-If the bot finds a ZIP name, schema file name, or schema content problem, it leaves the issue open and explains what failed. Translation contribution issue titles and bodies are frozen after submission, but comments remain open. Attach the corrected ZIP in a new comment and write:
+如果机器人发现 ZIP 文件名、schema 文件名或 schema 内容问题，它会保留 issue 并说明失败原因。翻译投稿 issue 提交后会冻结标题和正文，但评论仍开放。请在新评论中附上修正后的 ZIP，并写：
 
 ```text
-/update <attachment link>
+/update <附件链接>
 ```
 
-The bot will rerun file checks from the replacement ZIP link. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
+机器人会用新的 ZIP 链接重新检查文件。如果非维护者尝试修改 issue 标题或正文，机器人会还原更改。如果问题不能通过替换文件解决，例如重复投稿或 Steam app 元数据不匹配，机器人会说明原因并关闭 issue。
 
-After a review PR exists, the original contributor or a maintainer can also comment the same `/update <attachment link>` command on the PR. If validation passes, the bot refreshes the PR branch and regenerates the PR description.
+审核 PR 已存在后，原投稿人或维护者也可以直接在 PR 中评论同样的 `/update <附件链接>` 命令。校验通过后，机器人会刷新 PR 分支并重新生成 PR 描述。
 
-## Maintainer Commands
+## 维护者命令
 
-Admins can comment:
+管理员可以在投稿 issue 中评论：
 
 ```text
 /rerun-checks
 ```
 
-This command reruns the normal issue guard and submission review from the current issue contents. It is useful when an earlier automation run was missed or failed because of workflow infrastructure. It does not ignore duplicate-submission warnings or any hard validation failure. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+这个命令会从当前 issue 内容重新执行普通 issue guard 和投稿审核，适合处理之前因为工作流基础设施问题漏跑或失败的投稿。它不会忽略重复投稿警告，也不会跳过任何硬性校验失败。非管理员使用此命令时，机器人会拒绝并保持普通审核流程不变。
 
-Admins can also comment:
+管理员也可以评论：
 
 ```text
 /force-review
 ```
 
-This command lets the submission continue when a maintainer has manually accepted review warnings, such as another open submission mentioning the same app ID or selected language fields that are incomplete and should be inspected in the PR. It does not skip hard failures such as a game already accepted into the library, mismatched Steam app metadata, wrong file names, unsafe ZIP structure, or Steam Binary KeyValues parse failures. If a non-admin uses this command, the bot rejects it and leaves the normal review flow unchanged.
+这个命令会在维护者人工确认可以接受审核警告时继续进入后续 PR 生成流程，例如已有其他开放投稿提到同一 app ID，或所选语言字段不完整但需要进入 PR 阶段人工检查。它不会跳过已入库重复、Steam app 元数据不匹配、文件名错误、不安全 ZIP 结构或 Steam Binary KeyValues 解析失败等硬错误。非管理员使用此命令时，机器人会拒绝并保持普通审核流程不变。
 
-After a maintainer approves the generated review PR, the bot thanks the contributor, squashes and merges the PR, and deletes the contribution branch.
+维护者 approve 生成的审核 PR 后，机器人会感谢投稿人，然后 squash merge 这个 PR，并删除投稿分支。
 
-## Labels
+## 标签区分
 
-- Translation library submissions use `translation-contribution`. Only this label triggers submission review.
-- Skill bug reports use `skill-bug`. These issues do not trigger translation-file review.
+- 翻译库投稿使用 `translation-contribution` 标签。只有这个标签会触发投稿机器人审核。
+- Skill 问题反馈使用 `skill-bug` 标签。此类 issue 不会触发翻译文件审核。
 
-If GitHub does not apply the issue-template label automatically, Actions creates and applies the matching label from the issue contents.
+如果 GitHub issue 模板没有自动打上标签，Actions 会按模板内容主动创建并补上对应标签。
 
-## Script Boundaries
+## 脚本边界
 
-`scripts/steam_bkv_tool.py` is the normal skill runtime script for local schema parsing, export, translation application, and verification. Scripts in `workflow-scripts/` are repository-level GitHub Actions helpers only: `github_issue_guard.py` handles issue labeling and freezing, `library_submission_bot.py` reviews submitted files and prepares PR content, and `translation_pr_maintenance.py` maintains submission PRs, indexes, and post-merge notifications.
+`scripts/steam_bkv_tool.py` 是普通 skill 运行脚本，用于本地 schema 解析、导出、翻译写入和校验。`workflow-scripts/` 中的脚本只用于仓库级 GitHub Actions：`github_issue_guard.py` 处理 issue 标签和冻结，`library_submission_bot.py` 审核投稿文件并生成 PR 内容，`translation_pr_maintenance.py` 维护投稿 PR、索引和合并后通知。
 
-## Library Layout
+## 翻译库结构
 
 ```text
 achievement-library/
@@ -97,4 +97,4 @@ achievement-library/
         └── UserGameStatsSchema_<game_id>.bin
 ```
 
-`achievement-library/README_EN.md` is the English user-facing lookup index. `achievement-library/README.md` is the Chinese default. Both are designed for GitHub browsing and browser search by game name, Steam app ID, contributor, or language code. `index.json` is the machine-readable index for scripts and automation.
+`achievement-library/README.md` 是中文默认用户索引，`achievement-library/README_EN.md` 是英文索引。两者都可以直接在 GitHub 页面中搜索游戏名、Steam app ID、贡献者或语言代码。`index.json` 是给脚本和自动化读取的机器索引。
