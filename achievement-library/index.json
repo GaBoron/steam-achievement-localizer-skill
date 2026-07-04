@@ -3,6 +3,19 @@
   "description": "Community-submitted Steam achievement schema translations. Entries are added through reviewed pull requests generated from translation-contribution issues.",
   "entries": [
     {
+      "game_name": "Days Gone/往日不再",
+      "game_id": "1259420",
+      "store_url": "https://store.steampowered.com/app/1259420/Days_Gone/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/1259420/UserGameStatsSchema_1259420.bin",
+      "achievement_count": 67,
+      "sha256": "cb5527e150b0aef3f10eba61768d6709c862161bdfd0dd19a484f4ebc049ebb7",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/5",
+      "contributor_id": ""
+    },
+    {
       "game_name": "God of War/战神4",
       "game_id": "1593500",
       "store_url": "https://store.steampowered.com/app/1593500/God_of_War/",
