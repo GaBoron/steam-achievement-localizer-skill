@@ -41,7 +41,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode guard
+          python workflow-scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode guard
 
   review:
     needs: issue-guard
@@ -64,7 +64,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /force-review
+          python workflow-scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /force-review
 
       - name: Authorize rerun command
         id: rerun_auth
@@ -74,7 +74,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /rerun-checks
+          python workflow-scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /rerun-checks
 
       - name: Prepare submission branch
         if: ${{ github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/update ') || steps.force_auth.outputs.authorized == 'true' || steps.rerun_auth.outputs.authorized == 'true' }}
@@ -95,7 +95,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/library_submission_bot.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN"
+          python workflow-scripts/library_submission_bot.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN"
 
       - name: Comment on failed review
         if: ${{ steps.validate.outcome == 'failure' }}
@@ -214,7 +214,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           gh pr merge "$PR_NUMBER" --squash --delete-branch
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch
+          python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch
 
   pr-update:
     if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/update ') }}
@@ -236,7 +236,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --pr-update
+          python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --pr-update
 
   post-merge-maintenance:
     if: ${{ github.actor != 'github-actions[bot]' && github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -259,4 +259,4 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          python scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch
+          python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch

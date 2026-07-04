@@ -671,7 +671,7 @@ def find_schema_cli(argv: list[str]) -> None:
 
 
 def workflow_cli(argv: list[str]) -> None:
-    ap = argparse.ArgumentParser(description="Automate the README workflow: version preflight, schema discovery, safe copy, export, apply, verify, and optional install.")
+    ap = argparse.ArgumentParser(description="Automate the skill workflow: version preflight, schema discovery, safe copy, export, apply, verify, and optional install.")
     ap.add_argument("--game-id")
     ap.add_argument("--schema", type=Path)
     ap.add_argument("--steam-dir", type=Path)

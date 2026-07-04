@@ -17,7 +17,7 @@ from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from steam_bkv_tool import achievement_rows, load_schema, serialize, sha256  # noqa: E402
 

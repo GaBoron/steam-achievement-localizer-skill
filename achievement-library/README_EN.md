@@ -2,11 +2,11 @@
 
 [简体中文](README.md) | English
 
-## Important Notes
+## Usage Notes
 
-- Browse this page first when checking whether a game has already been submitted. Games are sorted by game name using pinyin or alphabetical order. Use your browser search on this page for the Steam app ID, game name, contributor, or language code.
-- The file column shows only the file name. Click the file name to directly download the matching `UserGameStatsSchema_*.bin` file from the current `main` branch.
-- Automation reads `index.json`. Users should prefer this Markdown index for quick lookup.
+- Browse this page first when checking whether a game has already been submitted. Games are sorted by pinyin or alphabetically by game name, and you can use browser search for the Steam app ID, game name, contributor, or language code.
+- The file column shows only the file name. Click the file name to download the matching `UserGameStatsSchema_*.bin` file directly from the current `main` branch.
+- Automation and maintenance scripts read `index.json`; regular users should prefer this Markdown index for quick lookup.
 - Original game content, achievement text, Steam schema content, and related files remain the property of the corresponding game developers, publishers, and other rights holders.
 - Submitted translation text remains the property of the listed contributor. By contributing, contributors allow this repository to display, index, and distribute the submitted achievement file for community localization.
 
