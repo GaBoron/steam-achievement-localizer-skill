@@ -4,12 +4,9 @@
 
 当前版本：`v0.1.2`
 
-这是一个用于翻译 Steam 本地成就名称和描述的 Codex skill，处理
-`UserGameStatsSchema_*.bin` 文件。
+这是一个用于翻译 Steam 本地成就名称和描述的 Codex skill，处理`UserGameStatsSchema_*.bin` 文件。
 
-你只需要提供游戏 ID 或 schema 文件路径、目标语言、以及翻译要求。这个 skill 会
-读取文件，导出成就文本供你检查，再把确认后的翻译写回指定语言字段，并在替换
-Steam 文件前做检查。
+你只需要提供游戏 ID 或 schema 文件路径、目标语言、以及翻译要求。这个 skill 会读取文件，导出成就文本供你检查，再把确认后的翻译写回指定语言字段，并在替换Steam 文件前做检查。
 
 ## 快速入口
 
@@ -25,15 +22,10 @@ Steam 文件前做检查。
 - 机器可读索引：`achievement-library/index.json`
 - 成就文件：`achievement-library/files/<game_id>/UserGameStatsSchema_<game_id>.bin`
 
-如果你想分享已经翻译好的成就 schema，请使用上方翻译投稿入口，并上传
-对应的 `UserGameStatsSchema_<game_id>.zip` 文件。ZIP 内必须只包含一个
-`UserGameStatsSchema_<game_id>.bin` 文件。后台机器人会
-检查 issue 中的游戏 ID、商店地址、文件名、Steam Binary KeyValues 格式，以及你
-选择的语言字段是否都存在。初审通过后，机器人会自动创建 PR，包含更新后的索引、
-上传的成就文件，以及每个成就 ID 对应各语言成就名和描述的审核表格。
+如果你想分享已经翻译好的成就 schema，请使用上方翻译投稿入口，并上传对应的 `UserGameStatsSchema_<game_id>.zip` 文件。ZIP 内必须只包含一个`UserGameStatsSchema_<game_id>.bin` 文件。
+后台机器人会检查 issue 中的游戏 ID、商店地址、文件名、Steam Binary KeyValues 格式，以及你选择的语言字段是否都存在。初审通过后，机器人会自动创建 PR，包含上传的成就文件，以及每个成就 ID 对应各语言成就名和描述的审核表格。
 
-投稿前的查重方法和规范见 [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)。skill 本身的
-问题请使用单独的 skill bug issue 模板。
+投稿前的查重方法和规范见 [CONTRIBUTING_CN.md](CONTRIBUTING_CN.md)。skill 本身的问题请使用单独的 skill bug issue 模板。
 
 ## 安装
 
