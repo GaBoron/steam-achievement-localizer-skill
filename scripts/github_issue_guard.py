@@ -184,7 +184,10 @@ def guard_issue(event: dict[str, Any], repo: str, token: str) -> None:
     if is_skill_bug_issue(issue):
         labels_to_add.append("skill-bug")
     if labels_to_add:
-        add_issue_labels(repo, token, issue_number, labels_to_add)
+        existing_labels = issue_labels(issue)
+        missing_labels = [label for label in labels_to_add if label not in existing_labels]
+        if missing_labels:
+            add_issue_labels(repo, token, issue_number, missing_labels)
 
     if not translation_issue:
         return
