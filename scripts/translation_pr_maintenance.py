@@ -112,11 +112,26 @@ def source_issue_number(pr: dict[str, Any]) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def issue_number_from_url(url: str) -> int | None:
+    match = re.search(r"/issues/(\d+)(?:$|[?#])", url)
+    return int(match.group(1)) if match else None
+
+
 def source_issue_for_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str, Any] | None:
     issue_number = source_issue_number(pr)
     if not issue_number:
         return None
     return github_request("GET", repo, token, f"/issues/{issue_number}", allow_404=True)
+
+
+def contributor_from_source_issue(repo: str, token: str, source_issue: str) -> str:
+    issue_number = issue_number_from_url(source_issue)
+    if not issue_number:
+        return ""
+    issue = github_request("GET", repo, token, f"/issues/{issue_number}", allow_404=True)
+    if not issue:
+        return ""
+    return str((issue.get("user") or {}).get("login") or "")
 
 
 def commit_and_push_submission(branch: str, issue_number: int) -> bool:
@@ -160,7 +175,7 @@ def pr_body_field(body: str, label: str) -> str:
     return strip_inline_code(match.group(1)) if match else ""
 
 
-def entry_from_merged_pr(pr: dict[str, Any]) -> dict[str, Any]:
+def entry_from_merged_pr(repo: str, token: str, pr: dict[str, Any]) -> dict[str, Any]:
     body = str(pr.get("body") or "")
     game_id = pr_body_field(body, "Steam app ID")
     languages = [item.strip() for item in pr_body_field(body, "Supported languages").split(",") if item.strip()]
@@ -170,7 +185,8 @@ def entry_from_merged_pr(pr: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError(f"merged PR schema file is missing from main: {schema_file or '<empty>'}")
     data, nodes = load_schema(schema_path)
     rows = achievement_rows(nodes, languages[0] if languages else "english")
-    contributor = pr_body_field(body, "Contributor").lstrip("@")
+    source_issue = pr_body_field(body, "Source issue")
+    contributor = contributor_from_source_issue(repo, token, source_issue) or pr_body_field(body, "Contributor").lstrip("@")
     entry = {
         "game_name": pr_body_field(body, "Game name"),
         "game_id": game_id,
@@ -179,7 +195,7 @@ def entry_from_merged_pr(pr: dict[str, Any]) -> dict[str, Any]:
         "schema_file": schema_file,
         "achievement_count": len(rows),
         "sha256": sha256(data),
-        "source_issue": pr_body_field(body, "Source issue"),
+        "source_issue": source_issue,
         "contributor_id": contributor,
     }
     missing = [key for key in ("game_name", "game_id", "store_url", "schema_file", "source_issue") if not entry[key]]
@@ -196,7 +212,7 @@ def update_main_index_from_merged_pr(repo: str, token: str, merged_pr_number: in
         return False
     run(["git", "fetch", "origin", "main"])
     run(["git", "checkout", "-B", "main", "origin/main"])
-    entry = entry_from_merged_pr(pr)
+    entry = entry_from_merged_pr(repo, token, pr)
     upsert_index_entry(entry)
     return commit_and_push_main_index(merged_pr_number)
 

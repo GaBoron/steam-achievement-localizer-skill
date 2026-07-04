@@ -232,8 +232,8 @@ def write_human_index(index: dict[str, Any]) -> None:
         for entry in entries:
             game_id = str(entry.get("game_id", ""))
             game_name = escape_table(str(entry.get("game_name", "")))
-            contributor = escape_table(str(entry.get("contributor_id", "")))
-            contributor_text = f"@{contributor}" if contributor else ""
+            contributor = str(entry.get("contributor_id", "")).strip()
+            contributor_text = contributor_markdown_link(contributor)
             languages = escape_table(", ".join(entry.get("languages", [])))
             count = str(entry.get("achievement_count", ""))
             schema_file = str(entry.get("schema_file", ""))
@@ -271,6 +271,14 @@ def write_human_index(index: dict[str, Any]) -> None:
     ])
     HUMAN_INDEX_PATH.write_text("\n".join(zh_lines) + "\n", encoding="utf-8")
     HUMAN_INDEX_EN_PATH.write_text("\n".join(en_lines) + "\n", encoding="utf-8")
+
+
+def contributor_markdown_link(contributor: str) -> str:
+    if not contributor:
+        return ""
+    escaped = escape_table(contributor)
+    encoded = urllib.parse.quote(contributor, safe="")
+    return f"[@{escaped}](https://github.com/{encoded})"
 
 
 def upsert_index_entry(entry: dict[str, Any]) -> None:
