@@ -19,6 +19,12 @@ The command reads local `VERSION` every time and reuses a recent successful GitH
 
 Report the local version, latest GitHub tag, cache status, and whether they match. If versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
 
+## Contribution Update Requests
+
+When maintaining a translation contribution issue or its generated pull request, treat a comment containing `/update` as an update request. Contributors may write `/update` by itself and attach a replacement `UserGameStatsSchema_<game_id>.zip` to that same comment; do not require a URL after the command.
+
+If both a link and an attached zip are present in the `/update` comment, prefer the attached zip unless the user says otherwise. Reuse the normal submission validation before refreshing the stored package, generated metadata, PR branch, or PR description.
+
 ## Script Boundary
 
 Use `scripts/steam_bkv_tool.py` for skill runtime work: deterministic parsing, exporting, applying translations, version checks, schema lookup, verification, and optional install-back. Repository maintenance scripts live in `workflow-scripts/` and are only for GitHub Actions submission review, PR maintenance, and library index updates; do not use them for ordinary localization tasks.

@@ -209,10 +209,10 @@ def guard_issue(event: dict[str, Any], repo: str, token: str) -> None:
                 token,
                 issue_number,
                 "此翻译投稿 issue 提交后已冻结。只有维护者可以修改标题或正文；评论仍保持开放，"
-                "投稿人可以继续使用 `/update <附件链接>` 提交替换文件。非维护者的编辑已被还原。\n\n"
+                "投稿人可以继续评论 `/update` 并附上替换 ZIP。非维护者的编辑已被还原。\n\n"
                 "This translation contribution issue is frozen after submission. "
                 "Only maintainers can change the submitted title or body. "
-                "Comments remain open, including `/update <attachment link>` for replacement files. "
+                "Comments remain open, including `/update` with an attached replacement ZIP. "
                 "The non-maintainer edit was reverted.",
             )
 

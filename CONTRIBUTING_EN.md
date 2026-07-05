@@ -44,15 +44,15 @@ The pull request is opened by GitHub Actions, so contributors cannot directly ch
 
 ## Fixing a Submitted File
 
-If the bot finds a ZIP name, schema file name, or schema content problem, it leaves the issue open and explains what failed. Translation contribution issue titles and bodies are frozen after submission, but comments remain open. Attach the corrected ZIP in a new comment and write:
+If the bot finds a ZIP name, schema file name, or schema content problem, it leaves the issue open and explains what failed. Translation contribution issue titles and bodies are frozen after submission, but comments remain open. Write `/update` in a new comment and attach the corrected ZIP to that comment. A link after `/update` is not required; if you include both a link and an attachment, the bot uses the attached ZIP.
 
 ```text
-/update <attachment link>
+/update
 ```
 
-The bot will rerun file checks from the replacement ZIP link. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
+The bot reruns file checks from the replacement ZIP attachment. If a non-maintainer tries to change the issue title or body, the bot reverts the edit. If the problem is not file-fixable, such as a duplicate submission or mismatched Steam app metadata, the bot comments with the reason and closes the issue.
 
-After a review PR exists, the original contributor or a maintainer can also comment the same `/update <attachment link>` command on the PR. If validation passes, the bot refreshes the PR branch and regenerates the PR description.
+After a review PR exists, the original contributor or a maintainer can also comment `/update` on the PR and attach the replacement ZIP. If validation passes, the bot refreshes the PR branch and regenerates the PR description.
 
 ## Maintainer Commands
 

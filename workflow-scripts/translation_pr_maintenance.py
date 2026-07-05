@@ -324,8 +324,8 @@ def comment_update_failure(repo: str, token: str, pr_number: int, contributor: s
             body += f"- {warning}\n"
     if retry_allowed:
         body += (
-            "\n可以继续在 PR 或来源 issue 中评论 `/update <附件链接>` 提交新的 ZIP。\n"
-            "You can comment `/update <attachment link>` again on the PR or source issue with a replacement ZIP.\n"
+            "\n可以继续在 PR 或来源 issue 中评论 `/update` 并附上新的 ZIP。\n"
+            "You can comment `/update` again on the PR or source issue and attach a replacement ZIP.\n"
         )
     comment_issue(repo, token, pr_number, body)
 

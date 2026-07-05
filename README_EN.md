@@ -14,6 +14,7 @@ This repository also maintains a community achievement translation library. Skil
 - **Find existing translations**: open the [community achievement translation library](achievement-library/README_EN.md) and search by game name, Steam app ID, contributor, or language code.
 - **Submit a translated file**: create a [translation contribution issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=translation_contribution_en.yml) and upload `UserGameStatsSchema_<game_id>.zip`.
 - **Report a skill bug**: create a [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_en.yml).
+- **Update a submitted file**: comment `/update` in the source issue or generated PR and attach the new ZIP to the comment; no attachment link is required after the command.
 
 ## Repository Layout
 

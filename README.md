@@ -14,6 +14,7 @@ Steam Achievement Localizer 是一个用于本地化 Steam 成就名称和描述
 - **查找已有翻译**：打开 [社区成就翻译库](achievement-library/README.md)，按游戏名、Steam app ID、贡献者或语言代码搜索。
 - **提交翻译文件**：创建 [翻译投稿 issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=translation_contribution_zh.yml)，上传 `UserGameStatsSchema_<game_id>.zip`。
 - **反馈 skill 问题**：创建 [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_zh.yml)。
+- **更新投稿文件**：在来源 issue 或生成的 PR 中评论 `/update`，并把新的 ZIP 作为评论附件上传；不需要在命令后粘贴附件链接。
 
 ## 目录结构
 

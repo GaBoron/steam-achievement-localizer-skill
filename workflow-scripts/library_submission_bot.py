@@ -110,7 +110,7 @@ def extract_update_attachment(body: str) -> Attachment | None:
     text = body.strip()
     if not text.lower().startswith("/update"):
         return None
-    return extract_attachment(text[len("/update"):].strip())
+    return extract_attachment(text[len("/update"):].strip() or text)
 
 
 def download_attachment(attachment: Attachment, token: str | None, destination: Path) -> None:
@@ -465,7 +465,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, 
     if invalid_languages:
         problems.append(ReviewProblem("Invalid Steam language code(s): " + ", ".join(invalid_languages)))
     if not attachment:
-        problems.append(ReviewProblem("Attach exactly one UserGameStatsSchema_<game_id>.zip file containing UserGameStatsSchema_<game_id>.bin, or comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+        problems.append(ReviewProblem("Attach exactly one UserGameStatsSchema_<game_id>.zip file containing UserGameStatsSchema_<game_id>.bin, or comment `/update` and attach a replacement ZIP.", retryable=True))
 
     index = load_index()
     existing = existing_entry(index, game_id) if game_id else None
@@ -485,11 +485,11 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, 
         schema_name_match = SCHEMA_NAME_RE.fullmatch(attachment.filename)
         zip_name_match = ZIP_NAME_RE.fullmatch(attachment.filename)
         if not schema_name_match and not zip_name_match:
-            problems.append(ReviewProblem(f"Uploaded file must be UserGameStatsSchema_{game_id}.zip containing UserGameStatsSchema_{game_id}.bin; got {attachment.filename}. Comment `/update <attachment link>` with a correctly named ZIP replacement.", retryable=True))
+            problems.append(ReviewProblem(f"Uploaded file must be UserGameStatsSchema_{game_id}.zip containing UserGameStatsSchema_{game_id}.bin; got {attachment.filename}. Comment `/update` and attach a correctly named ZIP replacement.", retryable=True))
         elif schema_name_match and schema_name_match.group(1) != game_id:
-            problems.append(ReviewProblem(f"Uploaded file name app ID {schema_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement ZIP whose name matches the submitted app ID.", retryable=True))
+            problems.append(ReviewProblem(f"Uploaded file name app ID {schema_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update` and attach a replacement ZIP whose name matches the submitted app ID.", retryable=True))
         elif zip_name_match and zip_name_match.group(1) != game_id:
-            problems.append(ReviewProblem(f"Uploaded ZIP name app ID {zip_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update <attachment link>` with a replacement ZIP whose name matches the submitted app ID.", retryable=True))
+            problems.append(ReviewProblem(f"Uploaded ZIP name app ID {zip_name_match.group(1)} does not match submitted app ID {game_id}. Comment `/update` and attach a replacement ZIP whose name matches the submitted app ID.", retryable=True))
 
     if problems:
         errors, retry_allowed = split_problems(problems)
@@ -504,18 +504,18 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, 
             data, nodes = load_schema(schema_path)
             rebuilt = serialize(nodes)
         except Exception as exc:  # noqa: BLE001 - user-facing validation report.
-            return write_failure([f"Could not download or parse the uploaded schema ZIP: {exc}. Comment `/update <attachment link>` with a replacement ZIP containing exactly one UserGameStatsSchema_{game_id}.bin file."], warnings, True)
+            return write_failure([f"Could not download or parse the uploaded schema ZIP: {exc}. Comment `/update` and attach a replacement ZIP containing exactly one UserGameStatsSchema_{game_id}.bin file."], warnings, True)
 
         if data != rebuilt:
-            problems.append(ReviewProblem("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+            problems.append(ReviewProblem("Uploaded schema does not roundtrip byte-identically through the Steam Binary KeyValues parser. Comment `/update` and attach a replacement ZIP.", retryable=True))
         rows = achievement_rows(nodes, languages[0])
         achievement_ids = [str(row.get("api_name", "")) for row in rows]
         if not rows:
-            problems.append(ReviewProblem("Uploaded schema does not contain any Steam achievement display name/description records. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+            problems.append(ReviewProblem("Uploaded schema does not contain any Steam achievement display name/description records. Comment `/update` and attach a replacement ZIP.", retryable=True))
         if any(not achievement_id for achievement_id in achievement_ids):
-            problems.append(ReviewProblem("Every achievement must have a non-empty API name. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+            problems.append(ReviewProblem("Every achievement must have a non-empty API name. Comment `/update` and attach a replacement ZIP.", retryable=True))
         if len(set(achievement_ids)) != len(achievement_ids):
-            problems.append(ReviewProblem("Achievement API names must be unique. Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+            problems.append(ReviewProblem("Achievement API names must be unique. Comment `/update` and attach a replacement ZIP.", retryable=True))
 
         coverage, missing, _ = language_coverage(nodes, languages)
         for language, missing_ids in missing.items():
@@ -526,7 +526,7 @@ def validate_and_update(event: dict[str, Any], repo: str, token: str | None, *, 
                 if force_review:
                     warnings.append(force_warning(message))
                 else:
-                    problems.append(ReviewProblem(f"{message} Comment `/update <attachment link>` with a replacement ZIP.", retryable=True))
+                    problems.append(ReviewProblem(f"{message} Comment `/update` and attach a replacement ZIP.", retryable=True))
 
         if problems:
             errors, retry_allowed = split_problems(problems)
