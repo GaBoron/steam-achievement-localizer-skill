@@ -226,6 +226,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "刺客信条：叛变",
+      "game_id": "311560",
+      "store_url": "https://store.steampowered.com/app/311560/Assassins_Creed_Rogue/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/311560/UserGameStatsSchema_311560.bin",
+      "achievement_count": 46,
+      "sha256": "53b5086579ed6c95b9265eb45df921f1838499ec7ce13bd84c76aa3874fe9cee",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/44",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "刺客信条：启示录",
       "game_id": "201870",
       "store_url": "https://store.steampowered.com/app/201870/_/",
