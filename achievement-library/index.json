@@ -161,6 +161,19 @@
       "contributor_id": "dexyrezz"
     },
     {
+      "game_name": "刺客信条4：黑旗",
+      "game_id": "242050",
+      "store_url": "https://store.steampowered.com/app/242050/4/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/242050/UserGameStatsSchema_242050.bin",
+      "achievement_count": 60,
+      "sha256": "d55e915a0b329cbfc6a9fd664b468c9f0a6919a02008b383b61b5d7c50c2fe07",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/40",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "地铁：最后的曙光 重制版",
       "game_id": "287390",
       "store_url": "https://store.steampowered.com/app/287390/_/",
