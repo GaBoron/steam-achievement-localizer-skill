@@ -187,6 +187,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "刺客信条：编年史 俄罗斯",
+      "game_id": "359600",
+      "store_url": "https://store.steampowered.com/app/359600/Assassins_Creed_Chronicles_Russia/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/359600/UserGameStatsSchema_359600.bin",
+      "achievement_count": 17,
+      "sha256": "1402543d13ad947b2ee48242b7a1d667cce33467fe662c00a2aff6d305f6721c",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/50",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "刺客信条：启示录",
       "game_id": "201870",
       "store_url": "https://store.steampowered.com/app/201870/_/",
