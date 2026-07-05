@@ -198,6 +198,19 @@
       "sha256": "4830d37c68da32437dd156122efca9cc90ea18cf0d3acf4f10a02b0e9920e58f",
       "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/27",
       "contributor_id": "luoxiaogaung"
+    },
+    {
+      "game_name": "星球大战：前线2（2017）",
+      "game_id": "1237950",
+      "store_url": "https://store.steampowered.com/app/1237950/STAR_WARS__II/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/1237950/UserGameStatsSchema_1237950.bin",
+      "achievement_count": 43,
+      "sha256": "61cfa28beb2f07b3cf7f00a2d66d766926b0e40e107676b9a203d56eb530ca22",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/52",
+      "contributor_id": "Rui-CC1225"
     }
   ]
 }
