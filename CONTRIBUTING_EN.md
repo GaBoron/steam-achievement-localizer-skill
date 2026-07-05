@@ -78,6 +78,7 @@ After a maintainer approves the generated review PR, the bot thanks the contribu
 
 - Translation library submissions use `translation-contribution`. Only this label triggers submission review.
 - Skill bug reports use `skill-bug`. These issues do not trigger translation-file review.
+- Maintainers can add `wait-for-update` to a review PR that is temporarily blocked while waiting for contributor input. After any non-admin, non-bot user creates or edits a comment on that PR, Actions automatically removes the label.
 
 If GitHub does not apply the issue-template label automatically, Actions creates and applies the matching label from the issue contents.
 

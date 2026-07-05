@@ -31,8 +31,10 @@ INDEX_PATHS = [
 THANKS_MARKER = "<!-- sal-merged-thanks -->"
 REFRESH_MARKER = "<!-- sal-pr-refreshed -->"
 UPDATE_MARKER = "<!-- sal-pr-update -->"
+WAIT_FOR_UPDATE_LABEL = "wait-for-update"
 BOT_USERS = {"github-actions[bot]"}
 MAINTAINER_PERMISSIONS = {"admin", "maintain"}
+ADMIN_PERMISSIONS = {"admin"}
 
 
 def run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -80,15 +82,29 @@ def permission_for(repo: str, token: str, actor: str) -> str:
     return str(data.get("permission") or "none")
 
 
+def is_bot_actor(actor: str) -> bool:
+    return actor in BOT_USERS or actor.endswith("[bot]")
+
+
 def is_maintainer(repo: str, token: str, actor: str) -> bool:
-    if actor in BOT_USERS:
+    if is_bot_actor(actor):
         return True
     return permission_for(repo, token, actor) in MAINTAINER_PERMISSIONS
+
+
+def is_admin(repo: str, token: str, actor: str) -> bool:
+    if is_bot_actor(actor):
+        return True
+    return permission_for(repo, token, actor) in ADMIN_PERMISSIONS
 
 
 def is_update_allowed(repo: str, token: str, issue: dict[str, Any], actor: str) -> bool:
     contributor = str((issue.get("user") or {}).get("login") or "")
     return actor == contributor or is_maintainer(repo, token, actor)
+
+
+def issue_labels(issue: dict[str, Any]) -> set[str]:
+    return {label.get("name", "") for label in issue.get("labels", []) if isinstance(label, dict)}
 
 
 def issue_comment_exists(repo: str, token: str, issue_number: int, marker: str) -> bool:
@@ -100,6 +116,11 @@ def comment_issue(repo: str, token: str, issue_number: int, body: str, marker: s
     if marker and issue_comment_exists(repo, token, issue_number, marker):
         return
     github_request("POST", repo, token, f"/issues/{issue_number}/comments", {"body": body})
+
+
+def remove_issue_label(repo: str, token: str, issue_number: int, label: str) -> None:
+    encoded = urllib.parse.quote(label, safe="")
+    github_request("DELETE", repo, token, f"/issues/{issue_number}/labels/{encoded}", allow_404=True)
 
 
 def source_issue_number(pr: dict[str, Any]) -> int | None:
@@ -391,6 +412,22 @@ def update_pr_from_comment(repo: str, token: str, event: dict[str, Any]) -> None
     comment_issue(repo, token, pr_number, body)
 
 
+def clear_wait_for_update_from_comment(repo: str, token: str, event: dict[str, Any]) -> None:
+    issue = event.get("issue") or {}
+    if not issue.get("pull_request"):
+        return
+    if WAIT_FOR_UPDATE_LABEL not in issue_labels(issue):
+        return
+    actor = str(((event.get("comment") or {}).get("user") or {}).get("login") or "")
+    if not actor:
+        actor = str((event.get("sender") or {}).get("login") or "")
+    if not actor:
+        return
+    if is_admin(repo, token, actor):
+        return
+    remove_issue_label(repo, token, int(issue["number"]), WAIT_FOR_UPDATE_LABEL)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Maintain translation PRs after a library submission merge.")
     parser.add_argument("--repo", required=True)
@@ -402,6 +439,7 @@ def main() -> None:
     parser.add_argument("--refresh-open", action="store_true")
     parser.add_argument("--delete-branch", action="store_true")
     parser.add_argument("--pr-update", action="store_true")
+    parser.add_argument("--clear-wait-for-update", action="store_true")
     args = parser.parse_args()
 
     if args.update_index:
@@ -425,6 +463,11 @@ def main() -> None:
             raise SystemExit("--event is required for PR event handling")
         event = json.loads(args.event.read_text(encoding="utf-8"))
         update_pr_from_comment(args.repo, args.token, event)
+    if args.clear_wait_for_update:
+        if not args.event:
+            raise SystemExit("--event is required for PR event handling")
+        event = json.loads(args.event.read_text(encoding="utf-8"))
+        clear_wait_for_update_from_comment(args.repo, args.token, event)
 
 
 if __name__ == "__main__":

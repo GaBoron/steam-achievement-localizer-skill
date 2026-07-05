@@ -10,6 +10,7 @@ on:
   issue_comment:
     types:
       - created
+      - edited
   pull_request_review:
     types:
       - submitted
@@ -49,7 +50,7 @@ jobs:
 
   review:
     needs: issue-guard
-    if: ${{ always() && ((github.event_name == 'issues' && github.event.action != 'edited' && github.event.action != 'labeled' && !github.event.issue.pull_request && (contains(github.event.issue.labels.*.name, 'translation-contribution') || startsWith(github.event.issue.title, '[Translation contribution]') || (contains(github.event.issue.body, '### Steam app ID') && (contains(github.event.issue.body, '### Achievement schema ZIP') || contains(github.event.issue.body, '### 成就 schema ZIP'))))) || (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'translation-contribution' && !github.event.issue.pull_request) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && (contains(github.event.issue.labels.*.name, 'translation-contribution') || startsWith(github.event.issue.title, '[Translation contribution]') || (contains(github.event.issue.body, '### Steam app ID') && (contains(github.event.issue.body, '### Achievement schema ZIP') || contains(github.event.issue.body, '### 成就 schema ZIP')))) && (startsWith(github.event.comment.body, '/update ') || github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review ') || github.event.comment.body == '/rerun-checks' || startsWith(github.event.comment.body, '/rerun-checks ')))) }}
+    if: ${{ always() && ((github.event_name == 'issues' && github.event.action != 'edited' && github.event.action != 'labeled' && !github.event.issue.pull_request && (contains(github.event.issue.labels.*.name, 'translation-contribution') || startsWith(github.event.issue.title, '[Translation contribution]') || (contains(github.event.issue.body, '### Steam app ID') && (contains(github.event.issue.body, '### Achievement schema ZIP') || contains(github.event.issue.body, '### 成就 schema ZIP'))))) || (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'translation-contribution' && !github.event.issue.pull_request) || (github.event_name == 'issue_comment' && !github.event.issue.pull_request && (contains(github.event.issue.labels.*.name, 'translation-contribution') || startsWith(github.event.issue.title, '[Translation contribution]') || (contains(github.event.issue.body, '### Steam app ID') && (contains(github.event.issue.body, '### Achievement schema ZIP') || contains(github.event.issue.body, '### 成就 schema ZIP')))) && (github.event.comment.body == '/update' || startsWith(github.event.comment.body, '/update ') || github.event.comment.body == '/force-review' || startsWith(github.event.comment.body, '/force-review ') || github.event.comment.body == '/rerun-checks' || startsWith(github.event.comment.body, '/rerun-checks ')))) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -81,7 +82,7 @@ jobs:
           python workflow-scripts/github_issue_guard.py --event "$GITHUB_EVENT_PATH" --repo "$GITHUB_REPOSITORY" --token "$GITHUB_TOKEN" --mode require-maintainer-command --command /rerun-checks
 
       - name: Prepare submission branch
-        if: ${{ github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/update ') || steps.force_auth.outputs.authorized == 'true' || steps.rerun_auth.outputs.authorized == 'true' }}
+        if: ${{ github.event_name != 'issue_comment' || github.event.comment.body == '/update' || startsWith(github.event.comment.body, '/update ') || steps.force_auth.outputs.authorized == 'true' || steps.rerun_auth.outputs.authorized == 'true' }}
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
@@ -92,7 +93,7 @@ jobs:
 
       - name: Validate submission and update library files
         id: validate
-        if: ${{ github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/update ') || steps.force_auth.outputs.authorized == 'true' || steps.rerun_auth.outputs.authorized == 'true' }}
+        if: ${{ github.event_name != 'issue_comment' || github.event.comment.body == '/update' || startsWith(github.event.comment.body, '/update ') || steps.force_auth.outputs.authorized == 'true' || steps.rerun_auth.outputs.authorized == 'true' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -127,8 +128,8 @@ jobs:
               for item in warnings:
                   print(f"- {item}")
           if data.get("retry_allowed"):
-              print("\n原 issue 标题和正文在提交后已冻结，但评论仍开放。要替换上传文件，请在新评论中附上修正后的 ZIP，并写 `/update <附件链接>`。")
-              print("\nThe original issue title and body are frozen after submission, but comments remain open. To replace the uploaded file, attach the corrected ZIP in a new comment and write `/update <attachment link>`.")
+              print("\n原 issue 标题和正文在提交后已冻结，但评论仍开放。要替换上传文件，请在新评论中写 `/update`，并把修正后的 ZIP 作为评论附件上传。")
+              print("\nThe original issue title and body are frozen after submission, but comments remain open. To replace the uploaded file, write `/update` in a new comment and attach the corrected ZIP to that comment.")
           PY
           else
             {
@@ -225,7 +226,7 @@ jobs:
           python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --merged-pr "$PR_NUMBER" --update-index --thank --delete-branch
 
   pr-update:
-    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/update ') }}
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && (github.event.comment.body == '/update' || startsWith(github.event.comment.body, '/update ')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -245,6 +246,26 @@ jobs:
           GITHUB_EVENT_PATH: ${{ github.event_path }}
         run: |
           python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --pr-update
+
+  clear-wait-for-update:
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.issue.labels.*.name, 'wait-for-update') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Clear wait-for-update after contributor activity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python workflow-scripts/translation_pr_maintenance.py --repo "$GITHUB_REPOSITORY" --token "$GH_TOKEN" --event "$GITHUB_EVENT_PATH" --clear-wait-for-update
 
   post-merge-maintenance:
     if: ${{ github.actor != 'github-actions[bot]' && github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main' && startsWith(github.event.pull_request.head.ref, 'translation-library/issue-') && github.event.pull_request.head.repo.full_name == github.repository }}

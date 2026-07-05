@@ -11,7 +11,7 @@ body:
 
         Before submitting, check the human-readable library index at `achievement-library/README.md`, open pull requests, and open issues tagged `translation-contribution` for the same Steam app ID.
         GitHub issues do not accept `.bin` attachments directly. Put the original `UserGameStatsSchema_<game_id>.bin` file into a ZIP named `UserGameStatsSchema_<game_id>.zip`, then upload that ZIP. The ZIP must contain exactly one `.bin` file.
-        After submission, this translation contribution issue's title and body are frozen. Contributors cannot edit submitted fields, but they can still comment or use `/update <attachment link>` with a replacement ZIP. After the review PR is created, the original contributor can also use `/update <attachment link>` directly on the PR.
+        After submission, this translation contribution issue's title and body are frozen. Contributors cannot edit submitted fields, but they can still comment, or comment `/update` and attach a replacement ZIP. After the review PR is created, the original contributor can also comment `/update` directly on the PR and attach a replacement ZIP.
   - type: input
     id: game-name
     attributes:

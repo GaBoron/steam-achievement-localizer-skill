@@ -11,7 +11,7 @@ body:
 
         提交前请先检查 `achievement-library/README.md` 中的用户可读索引、当前开放 PR，以及带有 `translation-contribution` 标签的开放 issue，确认相同 Steam app ID 尚未投稿。
         GitHub issue 不能直接上传 `.bin` 附件。请把已经包含所选语言字段的原始 `UserGameStatsSchema_<game_id>.bin` 放入名为 `UserGameStatsSchema_<game_id>.zip` 的 ZIP 中再上传。ZIP 内必须只有这一个 `.bin` 文件。
-        提交后，此翻译投稿 issue 的标题和正文会被冻结。投稿人不能再修改已提交字段，但仍可以在评论中补充信息或使用 `/update <附件链接>` 提交替换 ZIP。审核 PR 创建后，原投稿人也可以直接在 PR 中使用 `/update <附件链接>`。
+        提交后，此翻译投稿 issue 的标题和正文会被冻结。投稿人不能再修改已提交字段，但仍可以在评论中补充信息，或评论 `/update` 并上传替换 ZIP。审核 PR 创建后，原投稿人也可以直接在 PR 中评论 `/update` 并上传替换 ZIP。
   - type: input
     id: game-name
     attributes:
