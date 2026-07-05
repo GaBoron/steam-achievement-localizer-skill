@@ -3,6 +3,19 @@
   "description": "Community-submitted Steam achievement schema translations. Entries are added through reviewed pull requests generated from translation-contribution issues.",
   "entries": [
     {
+      "game_name": "Assassin’s Creed® Liberation HD/刺客信条：解放",
+      "game_id": "260210",
+      "store_url": "https://store.steampowered.com/app/260210/Assassins_Creed_Liberation_HD/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/260210/UserGameStatsSchema_260210.bin",
+      "achievement_count": 30,
+      "sha256": "cd592ef2b23b901e50aca6ec56e2d293fd6a3a29dad24bd8909fb03d17ed6b0c",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/38",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "Batman: Arkham Asylum Game of the Year Edition",
       "game_id": "35140",
       "store_url": "https://store.steampowered.com/app/35140/Batman_Arkham_Asylum_Game_of_the_Year_Edition/",
