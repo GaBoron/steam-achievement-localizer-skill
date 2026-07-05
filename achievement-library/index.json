@@ -213,6 +213,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "刺客信条：编年史 中国",
+      "game_id": "354380",
+      "store_url": "https://store.steampowered.com/app/354380/Assassins_Creed_Chronicles_China/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/354380/UserGameStatsSchema_354380.bin",
+      "achievement_count": 18,
+      "sha256": "2e4bfe61d6541ff74a8cdb60d7b98b90d7f6a14de2643e131bd3322900e58591",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/46",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "刺客信条：启示录",
       "game_id": "201870",
       "store_url": "https://store.steampowered.com/app/201870/_/",
