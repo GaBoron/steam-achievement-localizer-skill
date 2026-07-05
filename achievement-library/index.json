@@ -161,6 +161,19 @@
       "contributor_id": "dexyrezz"
     },
     {
+      "game_name": "《极品飞车：热力追踪》重制版",
+      "game_id": "1328660",
+      "store_url": "https://store.steampowered.com/app/1328660/_/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/1328660/UserGameStatsSchema_1328660.bin",
+      "achievement_count": 66,
+      "sha256": "5aa81fd4c5301b63a2639fcb75304106a3e3aaf252094f56bc5bd9e2aa6df2bb",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/21",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "刺客信条4：黑旗",
       "game_id": "242050",
       "store_url": "https://store.steampowered.com/app/242050/4/",
