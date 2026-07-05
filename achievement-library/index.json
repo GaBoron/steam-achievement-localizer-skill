@@ -200,6 +200,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "地铁2033 重制版",
+      "game_id": "286690",
+      "store_url": "https://store.steampowered.com/app/286690/2033/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/286690/UserGameStatsSchema_286690.bin",
+      "achievement_count": 49,
+      "sha256": "4625bc1c14a5ff6ae80c87e5e3eb7a5cf3e46b7ce7d410a2fcc8768f8535f6c4",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/29",
+      "contributor_id": "luoxiaogaung"
+    },
+    {
       "game_name": "地铁：最后的曙光 重制版",
       "game_id": "287390",
       "store_url": "https://store.steampowered.com/app/287390/_/",
