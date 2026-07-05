@@ -174,6 +174,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "刺客信条：启示录",
+      "game_id": "201870",
+      "store_url": "https://store.steampowered.com/app/201870/_/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/201870/UserGameStatsSchema_201870.bin",
+      "achievement_count": 48,
+      "sha256": "e6c515e7b5d5f26a33d7d3d44551f0b1da65bce5f1653474ad74f71bc91e6823",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/30",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "刺客信条：自由呐喊",
       "game_id": "277590",
       "store_url": "https://store.steampowered.com/app/277590/Assassins_Creed_Freedom_Cry/",
