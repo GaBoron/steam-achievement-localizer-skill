@@ -6,15 +6,13 @@
 
 Steam Achievement Localizer 是一个用于本地化 Steam 成就名称和描述的 Codex skill。它读取 `UserGameStatsSchema_*.bin`，按 Steam Binary KeyValues 格式做无损解析，导出可审核的成就文本，并只把确认后的翻译写入指定语言字段。
 
-这个仓库同时维护一个社区共享成就翻译库。skill 的运行脚本和仓库维护脚本已经分开：`scripts/` 只放随 skill 分发的运行时脚本，`workflow-scripts/` 只放 GitHub Actions 使用的投稿审核和索引维护脚本。
+> 翻译数据、可搜索索引、投稿模板和自动化初审流程在 [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library) 维护；本仓库只保存 Codex skill、运行时脚本、安装说明和本地应用流程。
 
 ## 快速入口
 
 - **安装 skill**：让 Codex 从 `https://github.com/GaBoron/steam-achievement-localizer-skill` 安装，或从 GitHub Releases 下载 `steam-achievement-localizer.zip` 手动安装。
-- **查找已有翻译**：打开 [社区成就翻译库](achievement-library/README.md)，按游戏名、Steam app ID、贡献者或语言代码搜索。
-- **提交翻译文件**：创建 [翻译投稿 issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=translation_contribution_zh.yml)，上传 `UserGameStatsSchema_<game_id>.zip`。
+- **查找已有翻译**：打开 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)，按游戏名、Steam app ID、贡献者或语言代码搜索。
 - **反馈 skill 问题**：创建 [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_zh.yml)。
-- **更新投稿文件**：在来源 issue 或生成的 PR 中评论 `/update`，并把新的 ZIP 作为评论附件上传；不需要在命令后粘贴附件链接。
 
 ## 目录结构
 
@@ -24,22 +22,13 @@ Steam Achievement Localizer 是一个用于本地化 Steam 成就名称和描述
 ├── VERSION
 ├── scripts/
 │   └── steam_bkv_tool.py
-├── workflow-scripts/
-│   ├── github_issue_guard.py
-│   ├── library_submission_bot.py
-│   └── translation_pr_maintenance.py
-├── achievement-library/
-│   ├── README.md
-│   ├── README_EN.md
-│   ├── index.json
-│   └── files/
 ├── README.md
 ├── README_EN.md
-├── CONTRIBUTING_CN.md
-└── CONTRIBUTING.md
+├── CONTRIBUTING.md
+└── CONTRIBUTING_EN.md
 ```
 
-`scripts/steam_bkv_tool.py` 是 skill 用户流程的唯一脚本入口，负责版本检查、schema 查找、导出、翻译写入、校验和可选安装。`workflow-scripts/` 是仓库维护入口，只服务 GitHub Actions 的 issue 审核、PR 刷新、索引生成和合并后维护，不随普通 skill 使用流程执行。
+`scripts/steam_bkv_tool.py` 是 skill 用户流程的唯一脚本入口，负责版本检查、schema 查找、导出、翻译写入、校验和可选安装。
 
 ## 安装
 
@@ -121,7 +110,7 @@ schema 文件：<UserGameStatsSchema_123456.bin 的路径>
 翻译要求：保留官方物品名，使用简洁自然的中文成就文案
 ```
 
-你可以同时提供术语表、官方本地化文本、Wiki 文本、已有翻译文件、社区翻译库条目或风格说明。Codex 应优先使用你提供或明确认可的来源。
+你可以同时提供术语表、官方本地化文本、Wiki 文本、已有翻译文件、独立翻译库条目或风格说明。Codex 应优先使用你提供或明确认可的来源。
 
 ## 可选自动化
 
@@ -158,13 +147,9 @@ python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-lang
 - 是否存在缺失、额外、空白或疑似残留源语言文本。
 - 写入前是否清理了不安全字符。
 
-## 社区翻译库
+## 共享翻译库
 
-社区翻译库位于 `achievement-library/`，包含 GitHub 浏览用索引、机器可读索引和用户投稿的 schema 文件。用户提交翻译贡献时应使用翻译投稿 issue 模板，并上传只包含一个 `UserGameStatsSchema_<game_id>.bin` 的 ZIP 文件。
-
-投稿机器人会检查 issue 字段、Steam 商店地址、文件名、ZIP 结构、Steam Binary KeyValues roundtrip、所选语言覆盖率和重复投稿。初审通过后，机器人会创建 PR；维护者最终审核合并后，仓库会更新 `achievement-library/index.json` 和两个 Markdown 索引。
-
-投稿规范和维护命令见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+共享翻译数据已经解耦到 [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library)。请在该仓库查找、下载、提交或更新 `UserGameStatsSchema_<app_id>.bin` 翻译文件；本仓库只处理 skill 本体和本地化工具问题。
 
 ## 致谢
 

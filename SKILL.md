@@ -19,15 +19,9 @@ The command reads local `VERSION` every time and reuses a recent successful GitH
 
 Report the local version, latest GitHub tag, cache status, and whether they match. If versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
 
-## Contribution Update Requests
-
-When maintaining a translation contribution issue or its generated pull request, treat a comment containing `/update` as an update request. Contributors may write `/update` by itself and attach a replacement `UserGameStatsSchema_<game_id>.zip` to that same comment; do not require a URL after the command.
-
-If both a link and an attached zip are present in the `/update` comment, prefer the attached zip unless the user says otherwise. Reuse the normal submission validation before refreshing the stored package, generated metadata, PR branch, or PR description.
-
 ## Script Boundary
 
-Use `scripts/steam_bkv_tool.py` for skill runtime work: deterministic parsing, exporting, applying translations, version checks, schema lookup, verification, and optional install-back. Repository maintenance scripts live in `workflow-scripts/` and are only for GitHub Actions submission review, PR maintenance, and library index updates; do not use them for ordinary localization tasks.
+Use `scripts/steam_bkv_tool.py` for skill runtime work: deterministic parsing, exporting, applying translations, version checks, schema lookup, verification, and optional install-back. Shared translation data and contribution automation live in the separate `GaBoron/steam-achievement-translation-library` repository; this skill repository should not assume a local translation-data checkout exists.
 
 Do not run optional automation such as Steam install discovery, schema lookup, batch missing-language translation, direct localized output, or install-back unless the user explicitly asks for that automation. Version preflight is the only automation to run by default.
 
@@ -107,7 +101,7 @@ The generated `*.missing.csv` file uses `target_name` and `target_description` c
 
 3. **Parse and export**: Use the lower-level export command when the schema file is already scoped. Use `steam_bkv_tool.py workflow` only when the user requests automated lookup, copy, export, apply, verify, or install behavior. Confirm `roundtrip_equal: true` and matching original/roundtrip SHA-256 before touching translations.
 
-4. **Collect trusted translations**: Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass. If the repository checkout includes `achievement-library/index.json`, use it as an optional community translation reference only when the user asks to search or reuse shared submissions. Preserve source provenance in a note, intermediate file, or report when translations come from external references.
+4. **Collect trusted translations**: Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass. Use entries from the separate `GaBoron/steam-achievement-translation-library` repository only when the user asks to search or reuse shared submissions. Preserve source provenance in a note, intermediate file, or report when translations come from external references.
 
 5. **Normalize target text**: Keep one clean target-language name and description per achievement. Keep translated text plain and single-line, with no NUL bytes, ASCII control characters, raw escape sequences, tabs, or line breaks. The script sanitizes unsafe text before writing and reports `translation_text_sanitized_count`; investigate any nonzero count.
 

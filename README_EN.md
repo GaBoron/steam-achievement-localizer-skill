@@ -6,15 +6,13 @@ Current version: `v0.1.2`
 
 Steam Achievement Localizer is a Codex skill for localizing Steam achievement names and descriptions. It reads `UserGameStatsSchema_*.bin`, parses Steam Binary KeyValues losslessly, exports achievement text for review, and writes confirmed translations only to the selected language field.
 
-This repository also maintains a community achievement translation library. Skill runtime scripts and repository maintenance scripts are separated: `scripts/` contains only the script shipped with the skill, while `workflow-scripts/` contains GitHub Actions helpers for submission review and library maintenance.
+> Translation data, searchable indexes, contribution templates, and automated first-pass review are maintained in [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library); this repository keeps only the Codex skill, runtime script, installation docs, and local application workflow.
 
 ## Quick Links
 
 - **Install the skill**: ask Codex to install from `https://github.com/GaBoron/steam-achievement-localizer-skill`, or download `steam-achievement-localizer.zip` from GitHub Releases.
-- **Find existing translations**: open the [community achievement translation library](achievement-library/README_EN.md) and search by game name, Steam app ID, contributor, or language code.
-- **Submit a translated file**: create a [translation contribution issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=translation_contribution_en.yml) and upload `UserGameStatsSchema_<game_id>.zip`.
+- **Find existing translations**: open the [Steam achievement translation library](https://github.com/GaBoron/steam-achievement-translation-library) and search by game name, Steam app ID, contributor, or language code.
 - **Report a skill bug**: create a [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_en.yml).
-- **Update a submitted file**: comment `/update` in the source issue or generated PR and attach the new ZIP to the comment; no attachment link is required after the command.
 
 ## Repository Layout
 
@@ -24,22 +22,13 @@ This repository also maintains a community achievement translation library. Skil
 ├── VERSION
 ├── scripts/
 │   └── steam_bkv_tool.py
-├── workflow-scripts/
-│   ├── github_issue_guard.py
-│   ├── library_submission_bot.py
-│   └── translation_pr_maintenance.py
-├── achievement-library/
-│   ├── README.md
-│   ├── README_EN.md
-│   ├── index.json
-│   └── files/
 ├── README.md
 ├── README_EN.md
-├── CONTRIBUTING_CN.md
-└── CONTRIBUTING.md
+├── CONTRIBUTING.md
+└── CONTRIBUTING_EN.md
 ```
 
-`scripts/steam_bkv_tool.py` is the only skill runtime entry point. It handles version checks, schema lookup, export, translation application, verification, and optional install-back. `workflow-scripts/` is for repository maintenance only: GitHub issue guarding, PR refreshes, index generation, and post-merge maintenance.
+`scripts/steam_bkv_tool.py` is the only skill runtime entry point. It handles version checks, schema lookup, export, translation application, verification, and optional install-back.
 
 ## Install
 
@@ -121,7 +110,7 @@ Workflow: export a CSV first, then apply it after I confirm
 Translation notes: keep official item names unchanged and use short, natural Chinese
 ```
 
-You can also provide glossaries, official localization text, wiki text, existing translation files, community library entries, or style notes. Codex should prefer sources that you provide or explicitly approve.
+You can also provide glossaries, official localization text, wiki text, existing translation files, separate translation-library entries, or style notes. Codex should prefer sources that you provide or explicitly approve.
 
 ## Optional Automation
 
@@ -158,13 +147,9 @@ The install flow backs up the original file first, then verifies that the instal
 - Missing, extra, empty, or suspicious source-language residue is reported.
 - Unsafe characters are sanitized before writing.
 
-## Community Translation Library
+## Shared Translation Library
 
-The community translation library lives in `achievement-library/`. It contains GitHub-readable indexes, a machine-readable index, and user-submitted schema files. To contribute a translated schema, use the translation contribution issue template and upload a ZIP that contains exactly one `UserGameStatsSchema_<game_id>.bin` file.
-
-The submission bot checks issue fields, Steam store metadata, file names, ZIP structure, Steam Binary KeyValues roundtrip, selected language coverage, and duplicate submissions. After first review passes, the bot opens a PR; after maintainer review and merge, the repository updates `achievement-library/index.json` and both Markdown indexes.
-
-Submission rules and maintainer commands are documented in [CONTRIBUTING_EN.md](CONTRIBUTING_EN.md).
+Shared translation data has been split into [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library). Use that repository to search, download, submit, or update `UserGameStatsSchema_<app_id>.bin` translation files; this repository handles only the skill and localizer tooling.
 
 ## Acknowledgements
 
