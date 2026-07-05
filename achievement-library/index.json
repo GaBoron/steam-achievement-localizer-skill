@@ -200,6 +200,19 @@
       "contributor_id": "Rui-CC1225"
     },
     {
+      "game_name": "刺客信条：编年史 印度",
+      "game_id": "359610",
+      "store_url": "https://store.steampowered.com/app/359610/Assassins_Creed_Chronicles_India/",
+      "languages": [
+        "schinese"
+      ],
+      "schema_file": "achievement-library/files/359610/UserGameStatsSchema_359610.bin",
+      "achievement_count": 18,
+      "sha256": "4ac68880ddde4ff821aab4dfd8cfaa83be8b746dcc4520c08d476693309b761a",
+      "source_issue": "https://github.com/GaBoron/steam-achievement-localizer-skill/issues/48",
+      "contributor_id": "Rui-CC1225"
+    },
+    {
       "game_name": "刺客信条：启示录",
       "game_id": "201870",
       "store_url": "https://store.steampowered.com/app/201870/_/",
