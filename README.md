@@ -6,29 +6,12 @@
 
 Steam Achievement Localizer 是一个用于本地化 Steam 成就名称和描述的 Codex skill。它读取 `UserGameStatsSchema_*.bin`，按 Steam Binary KeyValues 格式做无损解析，导出可审核的成就文本，并只把确认后的翻译写入指定语言字段。
 
-> 翻译数据、可搜索索引、投稿模板和自动化初审流程在 [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library) 维护；本仓库只保存 Codex skill、运行时脚本、安装说明和本地应用流程。
+> 翻译数据、可搜索索引、投稿模板和自动化初审流程在 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library) 维护， **点击此链接前往查找用户分享翻译文件** ；本仓库只保存 Codex skill、运行时脚本、安装说明和本地应用流程。
 
 ## 快速入口
 
 - **安装 skill**：让 Codex 从 `https://github.com/GaBoron/steam-achievement-localizer-skill` 安装，或从 GitHub Releases 下载 `steam-achievement-localizer.zip` 手动安装。
-- **查找已有翻译**：打开 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)，按游戏名、Steam app ID、贡献者或语言代码搜索。
 - **反馈 skill 问题**：创建 [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_zh.yml)。
-
-## 目录结构
-
-```text
-.
-├── SKILL.md
-├── VERSION
-├── scripts/
-│   └── steam_bkv_tool.py
-├── README.md
-├── README_EN.md
-├── CONTRIBUTING.md
-└── CONTRIBUTING_EN.md
-```
-
-`scripts/steam_bkv_tool.py` 是 skill 用户流程的唯一脚本入口，负责版本检查、schema 查找、导出、翻译写入、校验和可选安装。
 
 ## 安装
 
@@ -147,10 +130,6 @@ python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-lang
 - 是否存在缺失、额外、空白或疑似残留源语言文本。
 - 写入前是否清理了不安全字符。
 
-## 共享翻译库
-
-共享翻译数据已经解耦到 [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library)。请在该仓库查找、下载、提交或更新 `UserGameStatsSchema_<app_id>.bin` 翻译文件；本仓库只处理 skill 本体和本地化工具问题。
-
 ## 致谢
 
 本项目参考了以下公开项目：
@@ -160,7 +139,3 @@ python <skill>\scripts\steam_bkv_tool.py workflow --game-id 123456 --target-lang
 - [SteamAchievementLocalizer](https://github.com/PanVena/SteamAchievementLocalizer)
 
 感谢这些项目的作者和贡献者分享 Steam 成就文件与本地化流程相关研究。本项目是独立实现；使用上述项目内容时，请遵守各项目许可证。
-
-## 许可证
-
-MIT

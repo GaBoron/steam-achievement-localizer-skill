@@ -6,29 +6,12 @@ Current version: `v0.1.2`
 
 Steam Achievement Localizer is a Codex skill for localizing Steam achievement names and descriptions. It reads `UserGameStatsSchema_*.bin`, parses Steam Binary KeyValues losslessly, exports achievement text for review, and writes confirmed translations only to the selected language field.
 
-> Translation data, searchable indexes, contribution templates, and automated first-pass review are maintained in [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library); this repository keeps only the Codex skill, runtime script, installation docs, and local application workflow.
+> Translation data, searchable indexes, contribution templates, and automated first-pass review are maintained in [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), **Click this link to find translation files shared by users** ; this repository keeps only the Codex skill, runtime script, installation docs, and local application workflow.
 
 ## Quick Links
 
 - **Install the skill**: ask Codex to install from `https://github.com/GaBoron/steam-achievement-localizer-skill`, or download `steam-achievement-localizer.zip` from GitHub Releases.
-- **Find existing translations**: open the [Steam achievement translation library](https://github.com/GaBoron/steam-achievement-translation-library) and search by game name, Steam app ID, contributor, or language code.
 - **Report a skill bug**: create a [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_en.yml).
-
-## Repository Layout
-
-```text
-.
-├── SKILL.md
-├── VERSION
-├── scripts/
-│   └── steam_bkv_tool.py
-├── README.md
-├── README_EN.md
-├── CONTRIBUTING.md
-└── CONTRIBUTING_EN.md
-```
-
-`scripts/steam_bkv_tool.py` is the only skill runtime entry point. It handles version checks, schema lookup, export, translation application, verification, and optional install-back.
 
 ## Install
 
@@ -147,10 +130,6 @@ The install flow backs up the original file first, then verifies that the instal
 - Missing, extra, empty, or suspicious source-language residue is reported.
 - Unsafe characters are sanitized before writing.
 
-## Shared Translation Library
-
-Shared translation data has been split into [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library). Use that repository to search, download, submit, or update `UserGameStatsSchema_<app_id>.bin` translation files; this repository handles only the skill and localizer tooling.
-
 ## Acknowledgements
 
 This project was built with public references from:
@@ -160,7 +139,3 @@ This project was built with public references from:
 - [SteamAchievementLocalizer](https://github.com/PanVena/SteamAchievementLocalizer)
 
 Thanks to the authors and contributors of those projects for sharing research about Steam achievement files and localization workflows. This project is an independent implementation; please follow each referenced project's license terms when using their work.
-
-## License
-
-MIT
