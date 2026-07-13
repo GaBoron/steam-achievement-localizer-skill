@@ -6,11 +6,12 @@
 
 Steam Achievement Localizer 是一个用于本地化 Steam 成就名称和描述的 Codex skill。它读取 `UserGameStatsSchema_*.bin`，按 Steam Binary KeyValues 格式做无损解析，导出可审核的成就文本，并只把确认后的翻译写入指定语言字段。
 
-> 翻译数据、可搜索索引、投稿模板和自动化初审流程在 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library) 维护， **点击此链接前往查找用户分享翻译文件** ；本仓库只保存 Codex skill、运行时脚本、安装说明和本地应用流程。
+> 只想安装现成翻译的普通用户，请使用 [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer)。翻译数据、可搜索索引、投稿模板和自动化初审流程在 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library) 维护；本仓库只保存 Codex skill、运行时脚本、安装说明和本地应用流程。
 
 ## 快速入口
 
 - **安装 skill**：让 Codex 从 `https://github.com/GaBoron/steam-achievement-localizer-skill` 安装，或从 GitHub Releases 下载 `steam-achievement-localizer.zip` 手动安装。
+- **安装现成翻译**：下载 [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer/releases/latest)，无需使用 Codex 或手动替换文件。
 - **反馈 skill 问题**：创建 [skill bug issue](https://github.com/GaBoron/steam-achievement-localizer-skill/issues/new?template=skill_bug_zh.yml)。
 
 ## 安装
