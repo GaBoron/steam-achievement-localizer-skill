@@ -22,4 +22,5 @@ __pycache__/
 venv/
 outputs/
 work/
+localization/
 dist/

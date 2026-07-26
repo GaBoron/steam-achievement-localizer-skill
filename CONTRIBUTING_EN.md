@@ -1,28 +1,22 @@
-# Contributing to Steam Achievement Localizer Skill
+# Contributing
 
-[简体中文](CONTRIBUTING.md) | English
+This repository owns only the Codex skill and localization-project tooling. Submit translation data to [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), and submit end-user install, backup, or restore behavior to [Steam Achievement Translation Installer](https://github.com/GaBoron/steam-achievement-translation-installer).
 
-This repository maintains the Codex skill, local runtime script, and installation documentation. 
+Preserve these module boundaries:
 
-## What Belongs Here
+- `scripts/steam_bkv_tool.py` composes commands only.
+- `scripts/steam_localizer/bkv.py` owns Binary KeyValues and schema structure.
+- `translations.py` owns translation sheets and research manifests.
+- `library.py` owns read-only catalog and reference verification.
+- `project.py` owns the organized project layout and final artifacts.
+- `steam.py` only locates local schemas.
 
-- Usage flow, constraints, or version-check rules in `SKILL.md`.
-- Binary KeyValues parsing, export, write, verification, lookup, or install-back logic in `scripts/steam_bkv_tool.py`.
-- README text, installation docs, release packaging notes, or skill bug templates.
-- Test fixtures or regression cases that do not contain concrete game translation data.
-
-## Development Checks
-
-After changing scripts, run at least the quick check:
+Run before submitting:
 
 ```powershell
-python scripts/steam_bkv_tool.py version-check --warn-only
+python -m compileall -q scripts tests
+python -m unittest discover -s tests -v
+python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
 ```
 
-If a change affects parsing, export, or writing, verify roundtrip behavior on a copied real or test schema and confirm the original Steam file is not overwritten.
-
-## Safety Boundaries
-
-- By default, work only on user-provided schema copies or files in an output directory.
-- Do not write back to Steam `appcache/stats` without explicit confirmation.
-- Do not commit secrets, tokens, personal paths, Steam account data, or private local configuration.
+Add focused unit tests for new behavior. Do not restore default version-network checks, direct Steam-file replacement, silent translation sanitization, or process files outside the project directory.

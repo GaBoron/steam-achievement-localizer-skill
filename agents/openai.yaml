@@ -1,0 +1,4 @@
+interface:
+  display_name: "Steam Achievement Localizer"
+  short_description: "Research and localize Steam achievements safely."
+  default_prompt: "Use $steam-achievement-localizer to research every available language and produce a verified Steam achievement translation."

@@ -1,28 +1,22 @@
-# 贡献 Steam Achievement Localizer Skill
+# 贡献指南
 
-简体中文 | [English](CONTRIBUTING_EN.md)
+本仓库只维护 Codex skill 和本地化项目工具。翻译数据请提交到 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)；面向用户的安装、备份和恢复逻辑请提交到 [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer)。
 
-本仓库维护 Codex skill、本地运行脚本和安装文档。
+修改本仓库时请保持以下边界：
 
-## 可以提交到本仓库的内容
+- `scripts/steam_bkv_tool.py` 只负责命令组合。
+- `scripts/steam_localizer/bkv.py` 只负责 Binary KeyValues 和 schema 结构。
+- `translations.py` 负责翻译表与研究清单。
+- `library.py` 负责只读的翻译库索引和参考文件校验。
+- `project.py` 负责集中式项目目录和最终产物。
+- `steam.py` 只负责本机 schema 定位。
 
-- `SKILL.md` 中的使用流程、约束或版本检查规则。
-- `scripts/steam_bkv_tool.py` 的 Binary KeyValues 解析、导出、写入、校验、查找或安装回写逻辑。
-- README、安装说明、release 打包说明或 skill bug 模板。
-- 不包含具体游戏翻译数据的测试样例或回归用例。
-
-## 开发检查
-
-修改脚本后，至少运行快速校验：
+提交前运行：
 
 ```powershell
-python scripts/steam_bkv_tool.py version-check --warn-only
+python -m compileall -q scripts tests
+python -m unittest discover -s tests -v
+python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
 ```
 
-如果改动影响解析、导出或写入流程，请用真实或测试 schema 在副本上验证 roundtrip，并确认不会覆盖用户原始 Steam 文件。
-
-## 安全边界
-
-- 默认只处理用户提供的 schema 副本或输出目录中的文件。
-- 不要在未明确确认时写回 Steam `appcache/stats`。
-- 不要提交密钥、令牌、个人路径、Steam 账号数据或私有本地配置。
+新增行为应包含独立单元测试。不得恢复默认版本联网检查、直接覆盖 Steam 文件、静默清理翻译文本或把过程文件散落到项目目录之外。

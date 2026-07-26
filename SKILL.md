@@ -1,126 +1,79 @@
 ---
 name: steam-achievement-localizer
-description: Localize Steam UserGameStatsSchema_*.bin achievement schema files by parsing Binary KeyValues losslessly, exporting achievement text, preparing or merging translations from user-provided CSVs, official localization, glossaries, community references, or AI-assisted translation, writing only the requested Steam language field such as schinese/tchinese/japanese/koreana, and verifying byte-identical round trips. Use when translating Steam achievement names/descriptions, updating Steam achievement localization fields, or preparing a verified localized replacement for a Steam appcache stats schema.
+description: Research, translate, and verify Steam UserGameStatsSchema_*.bin achievement names and descriptions through lossless Binary KeyValues parsing, comparison of every language present in the source schema, required online research whenever network tools are available, optional verified references from GaBoron/steam-achievement-translation-library, and organized work/final artifacts compatible with the translation library and installer. Use when preparing, reviewing, applying, or packaging Steam achievement localization for any Steam language.
 ---
 
 # Steam Achievement Localizer
 
-Use this skill to translate Steam achievement schema files such as `UserGameStatsSchema_123456.bin` without corrupting Steam Binary KeyValues.
+Translate achievement text without corrupting Steam Binary KeyValues or treating English as the only source of meaning.
 
-## Version Preflight
+## Scope
 
-Before every localization task, run the cached version preflight:
+Use `scripts/steam_bkv_tool.py` for deterministic schema parsing, project preparation, translation application, verification, packaging, and optional local schema discovery. Keep language judgment and source evaluation with the agent.
 
-```bash
-python <skill>/scripts/steam_bkv_tool.py version-check --warn-only
+Do not replace the live Steam file. Produce a verified canonical BIN and ZIP, then direct ordinary installation and restoration work to [GaBoron/steam-achievement-translation-installer](https://github.com/GaBoron/steam-achievement-translation-installer). Use [GaBoron/steam-achievement-translation-library](https://github.com/GaBoron/steam-achievement-translation-library) as the shared translation-data source and submission target.
+
+## Project Layout
+
+Keep every task inside one project directory:
+
+```text
+localization/<app_id>-<target_language>/
+|-- input/
+|   `-- UserGameStatsSchema_<app_id>.bin
+|-- work/
+|   |-- manifest.json
+|   |-- sources.json
+|   |-- translations.csv
+|   `-- references/                  # created only when a verified reference exists
+`-- final/                           # created only after apply succeeds
+    |-- UserGameStatsSchema_<app_id>.bin
+    |-- UserGameStatsSchema_<app_id>.zip
+    `-- report.json
 ```
 
-The command reads local `VERSION` every time and reuses a recent successful GitHub tag result for up to 24 hours. Use `--force` before install-back work, after updating the skill, when diagnosing version-related problems, or when the user explicitly asks for a fresh remote check.
-
-Report the local version, latest GitHub tag, cache status, and whether they match. If versions do not match, tell the user before continuing and prefer updating the skill unless the user asks to proceed with the local copy.
-
-## Script Boundary
-
-Use `scripts/steam_bkv_tool.py` for skill runtime work: deterministic parsing, exporting, applying translations, version checks, schema lookup, verification, and optional install-back. Shared translation data and contribution automation live in the separate `GaBoron/steam-achievement-translation-library` repository; this skill repository should not assume a local translation-data checkout exists.
-
-Do not run optional automation such as Steam install discovery, schema lookup, batch missing-language translation, direct localized output, or install-back unless the user explicitly asks for that automation. Version preflight is the only automation to run by default.
-
-Optional schema lookup when the user asks Codex to find the local file:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py find-schema --game-id 123456
-```
-
-Optional local schema inventory when the user asks Codex to list available schema files:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py find-schema
-```
-
-Optional automated workflow when the user asks Codex to automate the mechanical steps:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs
-```
-
-This runs the cached version preflight, searches common Steam install locations for `UserGameStatsSchema_123456.bin`, copies the live file into the output directory, exports the CSV, exports `*.missing.csv` for achievements missing the target language, writes a report, and leaves the original Steam file untouched. Use it only after the user asks for this level of automation.
-
-Apply a reviewed translation CSV:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs/translations.csv --strict-no-latin
-```
-
-Install the verified localized copy only when the user explicitly asks:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py workflow --game-id 123456 --target-language schinese --out-dir outputs --translations outputs/translations.csv --install
-```
-
-Basic export and roundtrip check:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py "C:/path/UserGameStatsSchema_123.bin" --out-dir outputs --target-language schinese
-```
-
-Apply translations and create a localized copy:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py "C:/path/UserGameStatsSchema_123.bin" --out-dir outputs --target-language schinese --translations outputs/translations.csv --localized-bin outputs/UserGameStatsSchema_123.schinese.bin --strict-no-latin
-```
-
-Verify an already localized copy:
-
-```bash
-python <skill>/scripts/steam_bkv_tool.py outputs/UserGameStatsSchema_123.schinese.bin --out-dir outputs/verify --target-language schinese
-```
-
-Accepted translation CSV columns:
-
-- ID: `api_name`, `id`, `achievement_id`, or `name`
-- Name: `<language>_name`, `target_name`, `translated_name`, `name_zh`, or `schinese_name`
-- Description: `<language>_description`, `target_description`, `translated_description`, `description_zh`, or `schinese_description`
-
-The generated `*.missing.csv` file uses `target_name` and `target_description` columns. Batch-fill every row in that file only when the user asks to translate all achievements missing the requested language at once.
-
-## Core Rules
-
-- Treat the file as Steam Binary KeyValues with type bytes: `0` object/begin, `1` UTF-8 string, `2` int32, `3` float32, `4` pointer/uint32, `5` widestring unsupported, `6` color/uint32, `7` uint64, `8` end.
-- Preserve node order and repeated keys. Do not represent child nodes as a plain dict for parsing or writing.
-- Before translating, prove lossless parsing by parsing the original, serializing without changes, and comparing SHA-256 plus raw bytes.
-- Only create or update target language string nodes under each achievement display `name` and `desc`.
-- Do not modify `english`, tokens, icons, hidden flags, stats, or unrelated fields.
-- Never overwrite the original Steam file until the localized copy has passed roundtrip verification and the user explicitly asks to install it.
-- When installing back into Steam, back up the original file first and verify the installed file hash matches the localized copy.
+Do not place drafts, reference downloads, reports, roundtrip copies, tree dumps, or localized files outside this project. Do not generate roundtrip BINs or full-tree JSON unless debugging a concrete parser problem.
 
 ## Workflow
 
-1. **Establish file scope**: Start with the cached version preflight. Use `find-schema --game-id <id>` or `workflow --game-id <id>` only if the user asks Codex to locate files or automate the mechanical workflow. Otherwise, work from the game ID, schema path, target language, and workflow choices the user provides. Treat Steam install and `appcache` paths as live external files, and work on copies in a workspace or output directory first.
+1. Establish the schema path and target Steam language. Run `find-schema` only when the user asks to locate a local schema:
 
-2. **Consult references only when needed**: For Binary KeyValues details, prefer `CommitteeOfZero/achievement_reconstructor` (`lib/dumpers.py`, `reader.py`, `writer.py`, `types.py`) and `PaulCombal/SamRewritten` (`src/backend/key_value.rs`). For achievement localization field heuristics, consult `PanVena/SteamAchievementLocalizer`, but do not copy its byte-search replacement approach for writing.
+   ```powershell
+   python <skill>\scripts\steam_bkv_tool.py find-schema --app-id 123456
+   ```
 
-3. **Parse and export**: Use the lower-level export command when the schema file is already scoped. Use `steam_bkv_tool.py workflow` only when the user requests automated lookup, copy, export, apply, verify, or install behavior. Confirm `roundtrip_equal: true` and matching original/roundtrip SHA-256 before touching translations.
+2. Prepare one project. Omit `--workspace` to use `localization/<app_id>-<language>`. Use `--offline` only when network access is genuinely unavailable or the user explicitly forbids it:
 
-4. **Collect trusted translations**: Prefer user-provided CSVs, official localization resources, existing local game files, developer-provided text, community-maintained references, or a user-approved AI translation pass. Use entries from the separate `GaBoron/steam-achievement-translation-library` repository only when the user asks to search or reuse shared submissions. Preserve source provenance in a note, intermediate file, or report when translations come from external references.
+   ```powershell
+   python <skill>\scripts\steam_bkv_tool.py prepare --schema "C:\path\UserGameStatsSchema_123456.bin" --target-language schinese
+   ```
 
-5. **Normalize target text**: Keep one clean target-language name and description per achievement. Keep translated text plain and single-line, with no NUL bytes, ASCII control characters, raw escape sequences, tabs, or line breaks. The script sanitizes unsafe text before writing and reports `translation_text_sanitized_count`; investigate any nonzero count.
+   Preparation proves byte-identical roundtrip in memory, copies the source into `input/`, exports one editable `work/translations.csv`, creates the research manifest, and checks the connected translation library. When a matching primary schema exists, it is downloaded with size and SHA-256 verification under `work/references/translation-library/` and exposed in `library_*` CSV columns.
 
-6. **Merge by stable achievement ID**: Match translation rows to schema rows by achievement ID/API name, not by row order or English name. Require counts to match or report missing and extra IDs. For each achievement, write the target language name to `display/name/<language>` and the target language description to `display/desc/<language>`.
+3. Read `work/manifest.json` and every language column in `work/translations.csv`. Compare every language present in the source schema, including partial fields. Never translate from English alone when other language fields exist. Treat differences between languages as evidence about terminology, tone, ambiguity, proper nouns, and omitted context; do not mechanically translate any one language.
 
-7. **Verify localized copy**: Parse the localized copy and serialize it unchanged. Require localized `roundtrip_equal: true`, confirm achievement count matches the source, confirm every achievement has the target language name and description, and report suspicious source-language residue, empty target fields, missing IDs, and unexpected extra IDs.
+4. Research external context. When web, browser, connector, or other network access is available, online research is mandatory. Search the game name, achievement IDs, official localization, developer material, Steam pages, trusted wikis, and useful community references in relevant languages. Prefer official or first-party sources, then the connected translation library, then reputable secondary sources. Record every source actually used in `work/sources.json` with its URL, kind, and a concise note. Set `network_access` to `unavailable` only after network tools are unavailable or fail; never use it merely to skip research.
 
-8. **Install only on request**: Use `workflow --install` only if the user asks to put the file back. Confirm the report shows a backup path and `installed_matches_localized: true`. Re-read or verify the installed file if the user needs an extra installation check.
+5. Record every source-schema language actually reviewed in `consulted_schema_languages`. Fill `target_name` and `target_description` for every row. Use `translation_notes` for ambiguity, terminology choices, source conflicts, wordplay, or proper nouns. Preserve placeholders and intentional punctuation. Keep text single-line and free of NUL, tabs, line breaks, and control characters; fix invalid text rather than relying on silent sanitization.
+
+6. Apply only after the translation and research files are complete:
+
+   ```powershell
+   python <skill>\scripts\steam_bkv_tool.py apply --workspace "localization\123456-schinese"
+   ```
+
+   Application refuses missing or extra achievement IDs, incomplete target text, unreviewed schema languages, absent online sources when network access is marked available, changed source hashes, duplicate language nodes, non-target-language modifications, failed roundtrips, or changed achievement counts.
+
+7. Review `final/report.json` and the canonical outputs. The ZIP must contain exactly one root-level `UserGameStatsSchema_<app_id>.bin`, matching the translation-library contribution contract. The canonical BIN is suitable for preview or installation through the companion installer.
+
+## Binary Safety Rules
+
+- Preserve node order, repeated keys, numeric bytes, tokens, icons, hidden flags, stats, and every non-target language field.
+- Match translations by stable achievement API ID, never by row number or English text.
+- Add or update only `display/name/<target_language>` and `display/desc/<target_language>` string nodes.
+- Require byte-identical parse/serialize roundtrips for both source and localized data.
+- Never overwrite the original schema or install back into Steam from this skill.
 
 ## Completion Report
 
-Report these facts at the end:
-
-- Original file path and whether it was overwritten.
-- Version preflight result: local version, latest GitHub tag, cache status, and whether they match.
-- Backup path if installed.
-- Original SHA-256 and localized SHA-256.
-- Roundtrip byte equality for original and localized copy.
-- Achievement count and target-language coverage count.
-- Missing IDs, extra IDs, empty target fields, and text residue counts.
-- Missing-language CSV path and translation text sanitization count.
-- Paths to localized `.bin`, translation CSV, translation source notes or exports, and reports.
+Report the source path and confirm it was not modified; project directory; source and localized SHA-256; roundtrip result; achievement count; source languages reviewed; online sources used or why network was unavailable; translation-library match; target-language coverage; and the three paths under `final/`.
