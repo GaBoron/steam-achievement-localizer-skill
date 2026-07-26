@@ -32,7 +32,7 @@ localization/<app_id>-<target_language>/
     `-- report.json
 ```
 
-Do not place drafts, reference downloads, reports, roundtrip copies, tree dumps, or localized files outside this project. Do not generate roundtrip BINs or full-tree JSON unless debugging a concrete parser problem.
+Keep every task artifact inside this project.
 
 ## Workflow
 
@@ -54,7 +54,7 @@ Do not place drafts, reference downloads, reports, roundtrip copies, tree dumps,
 
 4. Research external context. When web, browser, connector, or other network access is available, online research is mandatory. Search the game name, achievement IDs, official localization, developer material, Steam pages, trusted wikis, and useful community references in relevant languages. Prefer official or first-party sources, then the connected translation library, then reputable secondary sources. Record every source actually used in `work/sources.json` with its URL, kind, and a concise note. Set `network_access` to `unavailable` only after network tools are unavailable or fail; never use it merely to skip research.
 
-5. Record every source-schema language actually reviewed in `consulted_schema_languages`. Fill `target_name` and `target_description` for every row. Use `translation_notes` for ambiguity, terminology choices, source conflicts, wordplay, or proper nouns. Preserve placeholders and intentional punctuation. Keep text single-line and free of NUL, tabs, line breaks, and control characters; fix invalid text rather than relying on silent sanitization.
+5. Record every source-schema language actually reviewed in `consulted_schema_languages`. Fill `target_name` and `target_description` for every row. Use `translation_notes` for ambiguity, terminology choices, source conflicts, wordplay, or proper nouns. Preserve placeholders and intentional punctuation. Keep text single-line and free of NUL, tabs, line breaks, and control characters. Correct invalid cells before applying the translation.
 
 6. Apply only after the translation and research files are complete:
 

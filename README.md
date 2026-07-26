@@ -2,22 +2,37 @@
 
 # Steam Achievement Localizer Skill
 
-当前版本：`v0.1.2`
+当前版本：`v1.0.0`
 
 用于研究、翻译和验证 Steam `UserGameStatsSchema_*.bin` 成就文本的 Codex skill。它会无损解析 Binary KeyValues、把源文件中的全部语言放进同一份翻译表，并在可联网时要求补充在线资料，最终只修改指定语言字段。
 
 ## 与相关仓库的分工
 
 - [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)：保存社区翻译 BIN、索引和投稿流程。准备项目时，本 skill 会联网查询该库；若存在匹配条目，会校验并保存主版本作为参考。
-- [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer)：负责扫描、预览、安装、备份和恢复。本 skill 不再直接覆盖 Steam 文件。
+- [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer)：负责扫描、预览、安装、备份和恢复；本 skill 生成供其使用的标准 BIN/ZIP。
 - 本仓库：负责多语言语境研究、翻译草稿、无损写入、验证，以及生成兼容上述两个仓库的标准 BIN/ZIP。
 
 ## 安装
 
-让 Codex 从以下仓库安装：
+安装时以 [Latest Release](https://github.com/GaBoron/steam-achievement-localizer-skill/releases/latest) 的 `steam-achievement-localizer.zip` 为内容来源。AI 应下载该资产，并按压缩包内的目录结构完整安装：
 
 ```text
-Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
+Install $steam-achievement-localizer from the latest GitHub Release asset at https://github.com/GaBoron/steam-achievement-localizer-skill/releases/latest. Use only the files contained in steam-achievement-localizer.zip and preserve its directory structure.
+```
+
+Release 资产包含：
+
+```text
+steam-achievement-localizer/
+├── SKILL.md
+├── VERSION
+├── LICENSE
+├── agents/
+│   └── openai.yaml
+└── scripts/
+    ├── steam_bkv_tool.py
+    └── steam_localizer/
+        └── *.py
 ```
 
 安装后调用：
@@ -26,11 +41,9 @@ Install the skill from https://github.com/GaBoron/steam-achievement-localizer-sk
 使用 $steam-achievement-localizer 翻译这个 Steam 成就 schema。
 ```
 
-skill 目录需要同时保留 `SKILL.md`、`VERSION`、`agents/` 和完整的 `scripts/`。
+## 命令
 
-## 精简后的命令
-
-只保留三类运行时动作：
+使用以下运行时命令：
 
 ```powershell
 # 可选：查找本机 schema
@@ -70,8 +83,6 @@ localization/123456-schinese/
 - `input/`：只保存本次任务使用的源文件副本。
 - `work/`：只保存翻译过程文件、研究来源和经校验的参考文件。
 - `final/`：只保存可交付 BIN、标准投稿 ZIP 和最终报告。
-
-不再默认生成 roundtrip BIN、完整树 JSON、重复的导出 CSV、版本缓存或安装备份。
 
 ## 翻译要求
 

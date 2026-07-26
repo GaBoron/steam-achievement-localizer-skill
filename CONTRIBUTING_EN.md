@@ -19,4 +19,4 @@ python -m unittest discover -s tests -v
 python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
 ```
 
-Add focused unit tests for new behavior. Do not restore default version-network checks, direct Steam-file replacement, silent translation sanitization, or process files outside the project directory.
+Add focused unit tests for new behavior, keep source schemas read-only, reject invalid translations explicitly, and keep process files and final artifacts inside the project directory.

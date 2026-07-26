@@ -2,22 +2,37 @@
 
 # Steam Achievement Localizer Skill
 
-Current version: `v0.1.2`
+Current version: `v1.0.0`
 
 A Codex skill for researching, translating, and verifying Steam `UserGameStatsSchema_*.bin` achievement text. It parses Binary KeyValues losslessly, exposes every source-schema language in one translation sheet, requires online research when networking is available, and changes only the selected target language.
 
 ## Related Repository Responsibilities
 
 - [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library) stores community BIN files, the catalog, and contribution automation. Project preparation checks this catalog online and downloads a verified primary schema as a reference when available.
-- [Steam Achievement Translation Installer](https://github.com/GaBoron/steam-achievement-translation-installer) handles scanning, preview, installation, backup, and restore. This skill no longer replaces live Steam files.
+- [Steam Achievement Translation Installer](https://github.com/GaBoron/steam-achievement-translation-installer) handles scanning, preview, installation, backup, and restore; this skill produces its standard BIN/ZIP inputs.
 - This repository owns multilingual context research, translation drafts, lossless writing, verification, and standard BIN/ZIP outputs compatible with both companion repositories.
 
 ## Install
 
-Ask Codex to install the repository:
+Use `steam-achievement-localizer.zip` from the [Latest Release](https://github.com/GaBoron/steam-achievement-localizer-skill/releases/latest) as the installation source. An AI installer should download that asset and preserve the archive structure exactly:
 
 ```text
-Install the skill from https://github.com/GaBoron/steam-achievement-localizer-skill
+Install $steam-achievement-localizer from the latest GitHub Release asset at https://github.com/GaBoron/steam-achievement-localizer-skill/releases/latest. Use only the files contained in steam-achievement-localizer.zip and preserve its directory structure.
+```
+
+The Release asset contains:
+
+```text
+steam-achievement-localizer/
+├── SKILL.md
+├── VERSION
+├── LICENSE
+├── agents/
+│   └── openai.yaml
+└── scripts/
+    ├── steam_bkv_tool.py
+    └── steam_localizer/
+        └── *.py
 ```
 
 Invoke it with:
@@ -26,11 +41,9 @@ Invoke it with:
 Use $steam-achievement-localizer to translate this Steam achievement schema.
 ```
 
-Keep `SKILL.md`, `VERSION`, `agents/`, and the complete `scripts/` directory together in the installed skill.
+## Commands
 
-## Reduced Command Surface
-
-Only three runtime actions remain:
+Use these runtime commands:
 
 ```powershell
 # Optional: locate a local schema
@@ -70,8 +83,6 @@ localization/123456-schinese/
 - `input/` contains only the source copy used by the project.
 - `work/` contains translation drafts, research provenance, and verified references.
 - `final/` contains only the deliverable BIN, contribution ZIP, and final report.
-
-The workflow no longer emits roundtrip BIN files, full-tree JSON dumps, duplicate CSV exports, version caches, or installation backups by default.
 
 ## Translation Requirements
 
