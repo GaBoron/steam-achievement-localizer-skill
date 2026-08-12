@@ -106,6 +106,10 @@ python -m unittest discover -s tests -v
 python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
 ```
 
+## 支持
+
+如需联系支持，请发送邮件至 [SATLI.support@proton.me](mailto:SATLI.support@proton.me)。
+
 ## 致谢
 
 Binary KeyValues 研究参考：
