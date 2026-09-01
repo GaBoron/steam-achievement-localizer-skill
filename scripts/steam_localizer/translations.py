@@ -138,8 +138,6 @@ def load_translations(
             description = _validate_text(
                 str(row.get("target_description") or ""), api_name, "description"
             )
-            if not name or not description:
-                raise ValueError(f"translation is incomplete for {api_name!r}")
             entries[api_name] = TranslationEntry(name, description)
 
     actual_ids = set(entries)

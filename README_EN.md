@@ -2,9 +2,9 @@
 
 # Steam Achievement Localizer Skill
 
-Current version: `v1.0.0`
+Current version: `v1.1.0`
 
-A Codex skill for researching, translating, and verifying Steam `UserGameStatsSchema_*.bin` achievement text. It parses Binary KeyValues losslessly, exposes every source-schema language in one translation sheet, requires online research when networking is available, and changes only the selected target language.
+A Codex skill for researching, translating, and verifying Steam `UserGameStatsSchema_*.bin` achievement text. It parses Binary KeyValues losslessly, exposes every source-schema language in one translation sheet, prioritizes achievement-specific online context, references, and verified existing translations when networking is available, and changes only the selected target language.
 
 ## Related Repository Responsibilities
 
@@ -86,14 +86,18 @@ localization/123456-schinese/
 
 ## Translation Requirements
 
-`work/translations.csv` includes `<language>_name` and `<language>_description` columns for every language present in the source schema. Review and compare every one; never rely on English alone. When networking is available, research official localization, developer material, Steam pages, reliable wikis, or useful community references, then record the URLs actually used in `work/sources.json`.
+`work/translations.csv` includes `<language>_name` and `<language>_description` columns for every language present in the source schema. Review and compare every one; never rely on English alone. When networking is available, online research is a high-weight translation input: search with the game title and exact achievement text or API ID, then check relevant characters, items, locations, quests, mechanics, story context, wordplay, and franchise terminology.
+
+Use evidence in this order: official in-game localization and first-party developer/store material; a verified existing translation for the same game and achievement, including a matching translation-library schema; trusted wikis, guides, databases, and stable community usage; and finally cross-language schema wording and general linguistic inference. Existing translations are strong references, but verify the achievement ID, game version, source meaning, field structure, placeholders, and target-language terminology rather than copying them mechanically. Record every URL actually used in `work/sources.json` and state what context or wording it supported; explain conflicting-source decisions in `translation_notes`.
+
+Match names and descriptions independently for each achievement. If an achievement's name is nonempty in any language, it must be nonempty in every language; the same rule applies separately to its description. When a field is empty in every language, leave it empty in the target language. A schema may therefore have nine achievements with both fields and one with only a name; the translation must preserve that per-achievement field pattern rather than fill every blank field.
 
 `apply` verifies that:
 
 - every source-schema language was reviewed;
 - online sources were recorded when networking was available;
 - achievement API IDs are complete with no extras;
-- every target name and description is complete, single-line, and control-character free;
+- each achievement name and description is independently either nonempty in every language or empty in every language, with nonempty text kept single-line and control-character free;
 - only the target language changed;
 - source and final data pass byte-identical roundtrips; and
 - the final ZIP contains exactly one canonical root-level BIN.

@@ -202,8 +202,10 @@ def prepare_project(
         "translations_csv": str(paths.translations),
         "research_manifest": str(paths.research),
         "next_step": (
-            "Review every source-language column, research online sources when available, "
-            "record that work in sources.json, and fill target_name/target_description."
+            "Review every source-language column, prioritize achievement-specific online "
+            "context and verified existing translations, record that evidence in "
+            "sources.json, and fill each target field used by the corresponding source "
+            "achievement."
         ),
     }
 
@@ -268,17 +270,16 @@ def apply_project(workspace: Path) -> dict[str, Any]:
         raise ValueError("a non-target language changed while applying translations")
     if len(localized_document.achievements) != len(source_document.achievements):
         raise ValueError("achievement count changed while applying translations")
-    incomplete = [
-        achievement.api_name
-        for achievement in localized_document.achievements
-        if not all(
-            value.strip()
-            for value in achievement.translations().get(target_language, ("", ""))
-        )
-    ]
-    if incomplete:
+    coverage_issues = localized_document.text_coverage_issues()
+    if coverage_issues:
+        details = []
+        for issue in coverage_issues:
+            details.append(
+                f"{issue['api_name']} {issue['field']} missing "
+                + ", ".join(issue["missing_languages"])
+            )
         raise ValueError(
-            "localized output is incomplete for IDs: " + ", ".join(incomplete)
+            "localized output has inconsistent language coverage: " + "; ".join(details)
         )
 
     _atomic_write(paths.final_bin, localized_payload)
@@ -301,6 +302,7 @@ def apply_project(workspace: Path) -> dict[str, Any]:
         "roundtrip_equal": True,
         "achievement_count": len(localized_document.achievements),
         "target_language_coverage_count": len(localized_document.achievements),
+        "target_language_coverage": localized_document.coverage()[target_language],
         "target_language_nodes_changed": changed_fields,
         "source_languages_consulted": research["consulted_schema_languages"],
         "online_sources": research["online_sources"],

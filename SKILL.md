@@ -1,6 +1,6 @@
 ---
 name: steam-achievement-localizer
-description: Research, translate, and verify Steam UserGameStatsSchema_*.bin achievement names and descriptions through lossless Binary KeyValues parsing, comparison of every language present in the source schema, required online research whenever network tools are available, optional verified references from GaBoron/steam-achievement-translation-library, and organized work/final artifacts compatible with the translation library and installer. Use when preparing, reviewing, applying, or packaging Steam achievement localization for any Steam language.
+description: Research, translate, and verify Steam UserGameStatsSchema_*.bin achievement names and descriptions through lossless Binary KeyValues parsing, comparison of every language present in the source schema, high-priority online context research whenever network tools are available, prioritized verified existing translations such as GaBoron/steam-achievement-translation-library, and organized work/final artifacts compatible with the translation library and installer. Use when preparing, reviewing, applying, or packaging Steam achievement localization for any Steam language.
 ---
 
 # Steam Achievement Localizer
@@ -50,11 +50,18 @@ Keep every task artifact inside this project.
 
    Preparation proves byte-identical roundtrip in memory, copies the source into `input/`, exports one editable `work/translations.csv`, creates the research manifest, and checks the connected translation library. When a matching primary schema exists, it is downloaded with size and SHA-256 verification under `work/references/translation-library/` and exposed in `library_*` CSV columns.
 
-3. Read `work/manifest.json` and every language column in `work/translations.csv`. Compare every language present in the source schema, including partial fields. Never translate from English alone when other language fields exist. Treat differences between languages as evidence about terminology, tone, ambiguity, proper nouns, and omitted context; do not mechanically translate any one language.
+3. Read `work/manifest.json` and every language column in `work/translations.csv`. Compare every language present in the source schema, including partial fields. Never translate from English alone when other language fields exist. Treat differences between languages as evidence about terminology, tone, ambiguity, proper nouns, and omitted context; do not mechanically translate any one language. Schema wording is linguistic evidence, but reliable game-specific context and verified existing translations should outweigh an unsupported literal reading.
 
-4. Research external context. When web, browser, connector, or other network access is available, online research is mandatory. Search the game name, achievement IDs, official localization, developer material, Steam pages, trusted wikis, and useful community references in relevant languages. Prefer official or first-party sources, then the connected translation library, then reputable secondary sources. Record every source actually used in `work/sources.json` with its URL, kind, and a concise note. Set `network_access` to `unavailable` only after network tools are unavailable or fail; never use it merely to skip research.
+4. Research external context before settling the translation. When web, browser, connector, or other network access is available, online research is mandatory and carries substantial weight in the wording decision. Search by game title together with the exact achievement text or API ID, then follow relevant character, item, location, quest, mechanic, story, wordplay, and franchise terminology. Use evidence in this order:
 
-5. Record every source-schema language actually reviewed in `consulted_schema_languages`. Fill `target_name` and `target_description` for every row. Use `translation_notes` for ambiguity, terminology choices, source conflicts, wordplay, or proper nouns. Preserve placeholders and intentional punctuation. Keep text single-line and free of NUL, tabs, line breaks, and control characters. Correct invalid cells before applying the translation.
+   - official in-game localization, developer material, store pages, and other first-party terminology;
+   - a verified existing translation for the same game and achievement, including a matching schema from the connected translation library;
+   - trusted wikis, guides, databases, and consistent community usage;
+   - cross-language schema wording and general linguistic inference.
+
+   Treat a verified existing translation as a strong reference, especially when it matches the same achievement ID and game version, but check it against current source meaning, field structure, placeholders, and established target-language terminology instead of copying it blindly. When sources conflict, prefer the source closest to the game and achievement context and explain the choice in `translation_notes`. Record every source actually used in `work/sources.json` with its URL, kind, and a concise note stating what context or wording it supported. Set `network_access` to `unavailable` only after network tools are unavailable or fail; never use it merely to skip research.
+
+5. Record every source-schema language actually reviewed in `consulted_schema_languages`. For each achievement, fill the target fields that the corresponding source achievement uses. Treat name and description independently: in the final schema, each field must be nonempty in every language or empty in every language. A row may therefore require both fields, only a name, only a description, or neither, and different rows may use different combinations. Do not add target text to a field that is empty in every other language. Use `translation_notes` for ambiguity, terminology choices, source conflicts, wordplay, proper nouns, or any decision materially guided by an existing translation or contextual source. Preserve placeholders and intentional punctuation. Keep nonempty text single-line and free of NUL, tabs, line breaks, and control characters. Correct invalid cells before applying the translation.
 
 6. Apply only after the translation and research files are complete:
 
@@ -62,7 +69,7 @@ Keep every task artifact inside this project.
    python <skill>\scripts\steam_bkv_tool.py apply --workspace "localization\123456-schinese"
    ```
 
-   Application refuses missing or extra achievement IDs, incomplete target text, unreviewed schema languages, absent online sources when network access is marked available, changed source hashes, duplicate language nodes, non-target-language modifications, failed roundtrips, or changed achievement counts.
+   Application refuses missing or extra achievement IDs, field coverage that is inconsistent across languages for an achievement, unreviewed schema languages, absent online sources when network access is marked available, changed source hashes, duplicate language nodes, non-target-language modifications, failed roundtrips, or changed achievement counts.
 
 7. Review `final/report.json` and the canonical outputs. The ZIP must contain exactly one root-level `UserGameStatsSchema_<app_id>.bin`, matching the translation-library contribution contract. The canonical BIN is suitable for preview or installation through the companion installer.
 

@@ -242,6 +242,31 @@ class SchemaDocument:
             }
         return result
 
+    def text_coverage_issues(self) -> list[dict[str, object]]:
+        """Report achievement fields that are populated in only some languages."""
+        issues: list[dict[str, object]] = []
+        languages = self.languages
+        for achievement in self.achievements:
+            translations = achievement.translations()
+            for field, index in (("name", 0), ("description", 1)):
+                present = [
+                    language
+                    for language in languages
+                    if translations.get(language, ("", ""))[index].strip()
+                ]
+                if present and len(present) != len(languages):
+                    issues.append(
+                        {
+                            "api_name": achievement.api_name,
+                            "field": field,
+                            "present_languages": present,
+                            "missing_languages": [
+                                language for language in languages if language not in present
+                            ],
+                        }
+                    )
+        return issues
+
     def translations_by_id(self) -> dict[str, dict[str, tuple[str, str]]]:
         return {
             achievement.api_name: achievement.translations()
