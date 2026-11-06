@@ -1,6 +1,6 @@
 # Contributing
 
-This repository owns only the Codex skill and localization-project tooling. Submit translation data to [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), and submit end-user install, backup, or restore behavior to [Steam Achievement Translation Installer](https://github.com/GaBoron/steam-achievement-translation-installer).
+This repository owns only the Codex skill and localization-project tooling. Submit translation data to [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), and submit end-user install, backup, or restore behavior to [SATLI](https://github.com/GaBoron/SATLI).
 
 Preserve these module boundaries:
 
@@ -8,6 +8,7 @@ Preserve these module boundaries:
 - `scripts/steam_localizer/bkv.py` owns Binary KeyValues and schema structure.
 - `translations.py` owns translation sheets and research manifests.
 - `library.py` owns read-only catalog and reference verification.
+- `public_data.py` owns public achievement acquisition and provenance snapshots; `translation_json.py` owns the standalone JSON text contract.
 - `project.py` owns the organized project layout and final artifacts.
 - `steam.py` only locates local schemas.
 

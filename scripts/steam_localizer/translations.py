@@ -3,16 +3,35 @@ from __future__ import annotations
 import csv
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from .bkv import SchemaDocument
+from .translation_json import TextMap, TextSource
 
 
 LANGUAGE_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
 UNSAFE_TEXT_RE = re.compile(r"[\x00-\x1f\x7f]")
+PLACEHOLDER_RE = re.compile(
+    r"%(?:\([A-Za-z_][A-Za-z0-9_]*\)|[1-9][0-9]*\$)?[-+#0 ]*[0-9]*(?:\.[0-9]+)?(?:hh|ll|[hlzjtL])?[diuoxXfFeEgGaAcsp](?:[1-9][0-9]*)?(?![A-Za-z0-9_])"
+    r"|(?<!\{)\{(?:[0-9]+|[A-Za-z_][A-Za-z0-9_]*)(?:![rsa])?(?::[^{}]+)?\}(?!\})"
+)
+
+
+def validate_placeholders(before: TextMap, target_language: str, entries: dict[str, TranslationEntry]) -> None:
+    for api_name, entry in entries.items():
+        originals = before[api_name]
+        references = {code: fields for code, fields in originals.items() if code != target_language} or originals
+        for index, (field, text) in enumerate((("name", entry.name), ("description", entry.description))):
+            actual = Counter(PLACEHOLDER_RE.findall(text.replace("%%", "")))
+            for code, fields in references.items():
+                if not fields[index].strip():
+                    continue
+                expected = Counter(PLACEHOLDER_RE.findall(fields[index].replace("%%", "")))
+                if actual != expected:
+                    raise ValueError(f"{api_name} {field}: placeholders do not match {code} source")
 
 
 @dataclass(frozen=True)
@@ -24,7 +43,7 @@ class TranslationEntry:
 @dataclass(frozen=True)
 class ReferenceDocument:
     label: str
-    document: SchemaDocument
+    document: TextSource
 
 
 def validate_language(value: str) -> str:
@@ -50,19 +69,20 @@ def _reference_prefix(label: str) -> str:
 
 
 def write_translation_draft(
-    source: SchemaDocument,
+    source: TextSource,
     target_language: str,
     path: Path,
     references: tuple[ReferenceDocument, ...] = (),
 ) -> None:
     language = validate_language(target_language)
+    source_languages = source.languages
     fieldnames = ["api_name"]
-    for source_language in source.languages:
+    for source_language in source_languages:
         fieldnames.extend(
             [f"{source_language}_name", f"{source_language}_description"]
         )
     reference_maps: list[
-        tuple[str, SchemaDocument, dict[str, dict[str, tuple[str, str]]]]
+        tuple[str, tuple[str, ...], dict[str, dict[str, tuple[str, str]]]]
     ] = []
     reference_prefixes: set[str] = set()
     for reference in references:
@@ -70,10 +90,11 @@ def write_translation_draft(
         if prefix in reference_prefixes:
             raise ValueError(f"duplicate reference label: {reference.label!r}")
         reference_prefixes.add(prefix)
+        reference_languages = reference.document.languages
         reference_maps.append(
-            (prefix, reference.document, reference.document.translations_by_id())
+            (prefix, reference_languages, reference.document.translations_by_id())
         )
-        for source_language in reference.document.languages:
+        for source_language in reference_languages:
             fieldnames.extend(
                 [
                     f"{prefix}_{source_language}_name",
@@ -84,18 +105,17 @@ def write_translation_draft(
 
     source_map = source.translations_by_id()
     rows: list[dict[str, str]] = []
-    for achievement in source.achievements:
-        row: dict[str, str] = {"api_name": achievement.api_name}
-        values = source_map[achievement.api_name]
-        for source_language in source.languages:
+    for api_name, values in source_map.items():
+        row: dict[str, str] = {"api_name": api_name}
+        for source_language in source_languages:
             name, description = values.get(source_language, ("", ""))
             row[f"{source_language}_name"] = name
             row[f"{source_language}_description"] = description
 
         target_name, target_description = values.get(language, ("", ""))
-        for prefix, reference_document, reference_map in reference_maps:
-            reference_values = reference_map.get(achievement.api_name, {})
-            for source_language in reference_document.languages:
+        for prefix, reference_languages, reference_map in reference_maps:
+            reference_values = reference_map.get(api_name, {})
+            for source_language in reference_languages:
                 name, description = reference_values.get(source_language, ("", ""))
                 row[f"{prefix}_{source_language}_name"] = name
                 row[f"{prefix}_{source_language}_description"] = description
@@ -122,6 +142,8 @@ def load_translations(
     entries: dict[str, TranslationEntry] = {}
     with Path(path).open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
+        if len(reader.fieldnames or ()) != len(set(reader.fieldnames or ())):
+            raise ValueError("translation CSV contains duplicate columns")
         required = {"api_name", "target_name", "target_description"}
         missing_columns = required - set(reader.fieldnames or ())
         if missing_columns:
@@ -129,8 +151,8 @@ def load_translations(
                 "translation CSV is missing columns: " + ", ".join(sorted(missing_columns))
             )
         for row_number, row in enumerate(reader, 2):
-            api_name = str(row.get("api_name") or "").strip()
-            if not api_name:
+            api_name = str(row.get("api_name") or "")
+            if not api_name.strip():
                 raise ValueError(f"translation CSV row {row_number} has no api_name")
             if api_name in entries:
                 raise ValueError(f"translation CSV contains duplicate ID {api_name!r}")

@@ -67,6 +67,13 @@ class ProjectWorkflowTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
+            # Existing workspaces predate source_kind and variant_id metadata.
+            manifest_path = workspace / "work" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest.pop("source_kind")
+            manifest.pop("variant_id")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
             report = apply_project(workspace)
 
             self.assertFalse(report["original_was_modified"])
@@ -85,8 +92,14 @@ class ProjectWorkflowTests(unittest.TestCase):
             }
             self.assertEqual(
                 final_files,
-                {"UserGameStatsSchema_123456.bin", "UserGameStatsSchema_123456.zip", "report.json"},
+                {"UserGameStatsSchema_123456.bin", "UserGameStatsSchema_123456.zip", "UserGameStatsSchema_123456.json", "report.json"},
             )
+            output_json = json.loads(final_bin.with_suffix(".json").read_text(encoding="utf-8"))
+            self.assertEqual(output_json["version"], 2)
+            self.assertNotIn("source_sha256", output_json)
+            self.assertEqual(output_json["achievements"]["FIRST"]["translations"]["schinese"],
+                             {"name": "成就1", "description": "完成第1项要求"})
+            self.assertEqual(source.read_bytes(), sample_schema())
 
     def test_apply_requires_all_schema_languages_to_be_consulted(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

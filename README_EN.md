@@ -4,13 +4,13 @@
 
 Current version: `v1.1.0`
 
-A Codex skill for researching, translating, and verifying Steam `UserGameStatsSchema_*.bin` achievement text. It parses Binary KeyValues losslessly, exposes every source-schema language in one translation sheet, prioritizes achievement-specific online context, references, and verified existing translations when networking is available, and changes only the selected target language.
+A skill for researching, translating, and verifying Steam achievements from a real `UserGameStatsSchema_*.bin` or a public App ID. Both routes produce standalone translation-library JSON. Real BIN projects also retain lossless BIN and standard ZIP output. Translation compares all acquired languages and uses achievement-specific online research and verified existing translations.
 
 ## Related Repository Responsibilities
 
-- [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library) stores community BIN files, the catalog, and contribution automation. Project preparation checks this catalog online and downloads a verified primary schema as a reference when available.
-- [Steam Achievement Translation Installer](https://github.com/GaBoron/steam-achievement-translation-installer) handles scanning, preview, installation, backup, and restore; this skill produces its standard BIN/ZIP inputs.
-- This repository owns multilingual context research, translation drafts, lossless writing, verification, and standard BIN/ZIP outputs compatible with both companion repositories.
+- [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library) stores BIN and JSON-only translations and accepts submissions. Preparation checks its current catalog and downloads verified references when available.
+- [SATLI](https://github.com/GaBoron/SATLI) handles BIN preview, installation, backup, and restore. [SATLI lite](https://github.com/GaBoron/SATLI-lite) 0.2.0+ can display standalone JSON translations.
+- This repository handles multilingual research, translation drafts, validation, and output. Public data is never used to synthesize a BIN.
 
 ## Install
 
@@ -54,12 +54,19 @@ python <skill>\scripts\steam_bkv_tool.py prepare `
   --schema "C:\path\UserGameStatsSchema_123456.bin" `
   --target-language schinese
 
+# No BIN or game ownership required: fetch public achievement text
+python <skill>\scripts\steam_bkv_tool.py prepare `
+  --app-id 123456 --target-language schinese `
+  --source-languages english,japanese
+
 # Produce final artifacts after research and translation are complete
 python <skill>\scripts\steam_bkv_tool.py apply `
   --workspace "localization\123456-schinese"
 ```
 
-Use `prepare --offline` only when networking is genuinely unavailable or the user explicitly forbids it.
+Choose either `--schema` or `--app-id`. Public source languages default to `english`; `--source-languages` requests additional relevant languages and records those unavailable. Review every language acquired. `--variant-id` selects the library variant, defaulting to `default`. Use `prepare --offline` only with a real BIN when networking is unavailable or explicitly forbidden.
+
+Public acquisition uses Steam’s structured achievement page without an API key. If no usable original data is accessible, preparation fails with a reason. Mismatched language ID sets, inconsistent fields, or conflicts with the selected library variant block formal export. Public records do not establish a game build or complete hidden-achievement/schema coverage.
 
 ## File Layout
 
@@ -68,25 +75,28 @@ Each game and target language uses one project directory:
 ```text
 localization/123456-schinese/
 ├── input/
-│   └── UserGameStatsSchema_123456.bin
+│   └── UserGameStatsSchema_123456.bin  # or public-achievements.json
 ├── work/
 │   ├── manifest.json
 │   ├── sources.json
 │   ├── translations.csv
 │   └── references/
 └── final/
-    ├── UserGameStatsSchema_123456.bin
-    ├── UserGameStatsSchema_123456.zip
+    ├── UserGameStatsSchema_123456.json
+    ├── UserGameStatsSchema_123456.bin  # real BIN route only
+    ├── UserGameStatsSchema_123456.zip  # real BIN route only
     └── report.json
 ```
 
-- `input/` contains only the source copy used by the project.
+- `input/` contains the real BIN copy or public-text snapshot with acquisition provenance.
 - `work/` contains translation drafts, research provenance, and verified references.
-- `final/` contains only the deliverable BIN, contribution ZIP, and final report.
+- `final/` contains standalone JSON and the report; real BIN projects also include BIN and contribution ZIP.
+
+Both routes export [format 2 JSON](https://github.com/GaBoron/steam-achievement-translation-library/blob/main/docs/translation-json.md), with stable API-name ordering, sorted languages, UTF-8/LF, and a final newline. It has exactly five top-level fields and no `source_sha256`. Real BIN integrity stays in the project report; public snapshot integrity is identified separately. Provenance and limitations stay in research/report files. Attach the JSON directly to the library’s JSON submission form and include sources in submission notes. JSON contains display text and cannot be installed as a BIN.
 
 ## Translation Requirements
 
-`work/translations.csv` includes `<language>_name` and `<language>_description` columns for every language present in the source schema. Review and compare every one; never rely on English alone. When networking is available, online research is a high-weight translation input: search with the game title and exact achievement text or API ID, then check relevant characters, items, locations, quests, mechanics, story context, wordplay, and franchise terminology.
+`work/translations.csv` includes `<language>_name` and `<language>_description` columns for every acquired source language, including public data. Review and compare every one; never rely on English alone. When networking is available, online research is a high-weight translation input: search with the game title and exact achievement text or API ID, then check relevant characters, items, locations, quests, mechanics, story context, wordplay, and franchise terminology.
 
 Use evidence in this order: official in-game localization and first-party developer/store material; a verified existing translation for the same game and achievement, including a matching translation-library schema; trusted wikis, guides, databases, and stable community usage; and finally cross-language schema wording and general linguistic inference. Existing translations are strong references, but verify the achievement ID, game version, source meaning, field structure, placeholders, and target-language terminology rather than copying them mechanically. Record every URL actually used in `work/sources.json` and state what context or wording it supported; explain conflicting-source decisions in `translation_notes`.
 
@@ -94,13 +104,15 @@ Match names and descriptions independently for each achievement. If an achieveme
 
 `apply` verifies that:
 
-- every source-schema language was reviewed;
+- every acquired source language was reviewed through `consulted_schema_languages`;
 - online sources were recorded when networking was available;
 - achievement API IDs are complete with no extras;
 - each achievement name and description is independently either nonempty in every language or empty in every language, with nonempty text kept single-line and control-character free;
-- only the target language changed;
-- source and final data pass byte-identical roundtrips; and
-- the final ZIP contains exactly one canonical root-level BIN.
+- target placeholders match their source fields and JSON IDs, languages, structure, and limits are valid;
+- real BIN projects change only target-language fields and preserve byte-identical source/output roundtrips; and
+- the BIN route’s ZIP contains exactly one canonical root-level BIN.
+
+The report identifies `BIN-derived` or `public-data-derived` and formal JSON eligibility. Eligibility means structural and source checks passed; translation quality and real client behavior still require review. Public projects make no BIN roundtrip or installation claim.
 
 ## Development Checks
 

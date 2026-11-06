@@ -1,6 +1,6 @@
 # 贡献指南
 
-本仓库只维护 Codex skill 和本地化项目工具。翻译数据请提交到 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)；面向用户的安装、备份和恢复逻辑请提交到 [Steam 成就翻译安装器](https://github.com/GaBoron/steam-achievement-translation-installer)。
+本仓库只维护 Codex skill 和本地化项目工具。翻译数据请提交到 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)；面向用户的安装、备份和恢复逻辑请提交到 [SATLI](https://github.com/GaBoron/SATLI)。
 
 修改本仓库时请保持以下边界：
 
@@ -8,6 +8,7 @@
 - `scripts/steam_localizer/bkv.py` 只负责 Binary KeyValues 和 schema 结构。
 - `translations.py` 负责翻译表与研究清单。
 - `library.py` 负责只读的翻译库索引和参考文件校验。
+- `public_data.py` 负责公开成就获取与来源快照；`translation_json.py` 负责独立 JSON 文本协议。
 - `project.py` 负责集中式项目目录和最终产物。
 - `steam.py` 只负责本机 schema 定位。
 

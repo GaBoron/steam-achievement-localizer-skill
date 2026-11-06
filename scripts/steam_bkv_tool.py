@@ -15,6 +15,9 @@ def _prepare_command(arguments: argparse.Namespace) -> dict[str, object]:
         arguments.target_language,
         arguments.workspace,
         offline=arguments.offline,
+        app_id=arguments.app_id,
+        variant_id=arguments.variant_id,
+        source_languages=tuple(arguments.source_languages.split(",")),
     )
 
 
@@ -34,10 +37,26 @@ def build_parser() -> argparse.ArgumentParser:
 
     prepare = commands.add_parser(
         "prepare",
-        help="create one organized translation workspace from a source schema",
+        help="create a translation workspace from a real BIN or public Steam App ID",
     )
-    prepare.add_argument("--schema", type=Path, required=True)
+    source = prepare.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--schema", type=Path,
+        help="real UserGameStatsSchema_<app_id>.bin; retains BIN/ZIP output",
+    )
+    source.add_argument(
+        "--app-id",
+        help="fetch public achievements without a BIN; produces standalone JSON only",
+    )
     prepare.add_argument("--target-language", required=True)
+    prepare.add_argument(
+        "--variant-id", default="default",
+        help="translation-library variant ID (default: default)",
+    )
+    prepare.add_argument(
+        "--source-languages", default="english",
+        help="comma-separated public languages to fetch and review (default: english); unavailable languages are recorded",
+    )
     prepare.add_argument(
         "--workspace",
         type=Path,
@@ -46,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.add_argument(
         "--offline",
         action="store_true",
-        help="skip the connected translation-library lookup",
+        help="skip the connected translation-library lookup (requires --schema)",
     )
     prepare.set_defaults(handler=_prepare_command)
 
