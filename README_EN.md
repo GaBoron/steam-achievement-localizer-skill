@@ -2,7 +2,7 @@
 
 # Steam Achievement Localizer Skill
 
-Current version: `v1.1.0`
+Current version: `v1.2.0`
 
 A skill for researching, translating, and verifying Steam achievements from a real `UserGameStatsSchema_*.bin` or a public App ID. Both routes produce standalone translation-library JSON. Real BIN projects also retain lossless BIN and standard ZIP output. Translation compares all acquired languages and uses achievement-specific online research and verified existing translations.
 
@@ -119,7 +119,7 @@ The report identifies `BIN-derived` or `public-data-derived` and formal JSON eli
 ```powershell
 python -m compileall -q scripts tests
 python -m unittest discover -s tests -v
-python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python <skill-creator>/scripts/quick_validate.py .
 ```
 
 ## Support

@@ -1,6 +1,6 @@
 # 贡献指南
 
-本仓库只维护 Codex skill 和本地化项目工具。翻译数据请提交到 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)；面向用户的安装、备份和恢复逻辑请提交到 [SATLI](https://github.com/GaBoron/SATLI)。
+本仓库只维护 skill 和本地化项目工具。翻译数据请提交到 [Steam 成就翻译库](https://github.com/GaBoron/steam-achievement-translation-library)；面向用户的安装、备份和恢复逻辑请提交到 [SATLI](https://github.com/GaBoron/SATLI)。
 
 修改本仓库时请保持以下边界：
 
@@ -17,7 +17,7 @@
 ```powershell
 python -m compileall -q scripts tests
 python -m unittest discover -s tests -v
-python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python <skill-creator>/scripts/quick_validate.py .
 ```
 
 新增行为应包含独立单元测试，并保持源文件只读、无效翻译显式报错、过程文件与最终产物集中存放。

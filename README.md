@@ -2,7 +2,7 @@
 
 # Steam Achievement Localizer Skill
 
-当前版本：`v1.1.0`
+当前版本：`v1.2.0`
 
 用于研究、翻译和验证 Steam 成就文本的 skill，可从真实 `UserGameStatsSchema_*.bin` 或公开 App ID 开始。两条路线均输出可独立投稿的翻译库 JSON；真实 BIN 项目同时保留无损 BIN 和标准 ZIP 输出。翻译时对照所有已获取语言，并结合成就语境研究和经核实的已有翻译。
 
@@ -119,7 +119,7 @@ localization/123456-schinese/
 ```powershell
 python -m compileall -q scripts tests
 python -m unittest discover -s tests -v
-python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python <skill-creator>/scripts/quick_validate.py .
 ```
 
 ## 支持

@@ -1,6 +1,6 @@
 # Contributing
 
-This repository owns only the Codex skill and localization-project tooling. Submit translation data to [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), and submit end-user install, backup, or restore behavior to [SATLI](https://github.com/GaBoron/SATLI).
+This repository owns only the skill and localization-project tooling. Submit translation data to [Steam Achievement Translation Library](https://github.com/GaBoron/steam-achievement-translation-library), and submit end-user install, backup, or restore behavior to [SATLI](https://github.com/GaBoron/SATLI).
 
 Preserve these module boundaries:
 
@@ -17,7 +17,7 @@ Run before submitting:
 ```powershell
 python -m compileall -q scripts tests
 python -m unittest discover -s tests -v
-python C:\Users\<user>\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python <skill-creator>/scripts/quick_validate.py .
 ```
 
 Add focused unit tests for new behavior, keep source schemas read-only, reject invalid translations explicitly, and keep process files and final artifacts inside the project directory.
