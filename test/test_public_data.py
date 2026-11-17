@@ -5,10 +5,11 @@ import hashlib
 import io
 import json
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
+
+from test_workspace import temporary_directory
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -64,7 +65,7 @@ class PublicDataTests(unittest.TestCase):
 
     def test_oversized_or_unavailable_page_fails_without_workspace(self):
         for page in [OSError("forbidden"), b'x' * (MAX_PAGE_BYTES + 1)]:
-            with tempfile.TemporaryDirectory() as temporary:
+            with temporary_directory() as temporary:
                 workspace = Path(temporary) / "project"
                 with self.assertRaisesRegex(ValueError, "cannot obtain public achievements"):
                     prepare_project(None, "schinese", workspace, app_id="123456", public_client=public_client({"english": page}))
@@ -93,7 +94,7 @@ class PublicDataTests(unittest.TestCase):
         research_path.write_bytes(json_bytes(research))
 
     def test_public_workflow_outputs_standalone_json_without_bin_claims(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary) / "project"
             library = Mock(lookup=Mock(side_effect=LibraryError("offline catalog")))
             self.prepare(root, library=library)
@@ -115,7 +116,7 @@ class PublicDataTests(unittest.TestCase):
             self.assertEqual(translation["achievements"]["SECOND"]["translations"]["schinese"], {"name": "成就", "description": ""})
 
     def test_inconsistent_language_snapshots_block_formal_output(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary) / "project"
             self.prepare(root, {"english": public_page(), "german": public_page("german", ids=("FIRST",))}, ("english", "german"))
             self.translate(root)
@@ -125,7 +126,7 @@ class PublicDataTests(unittest.TestCase):
             self.assertFalse(json.loads((root / "final/report.json").read_text())["json_submission_eligible"])
 
     def test_source_tampering_blank_targets_and_missing_placeholders_are_rejected(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary) / "project"
             self.prepare(root, {"english": public_page(description="Collect %s1 and {count}")})
             self.translate(root)
@@ -139,7 +140,7 @@ class PublicDataTests(unittest.TestCase):
                 apply_project(root)
 
     def test_source_options_reject_invalid_ids_variants_offline_and_existing_workspaces(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             for kwargs in ({"app_id": "../123"}, {"app_id": "0"}, {"app_id": "4294967296"},
                            {"app_id": "123456", "variant_id": "../bad"}, {"app_id": "123456", "offline": True}):
@@ -151,7 +152,7 @@ class PublicDataTests(unittest.TestCase):
 
     def test_json_only_library_reference_and_conflicting_ids(self):
         for ids in (("FIRST", "SECOND"), ("FIRST",)):
-            with self.subTest(ids=ids), tempfile.TemporaryDirectory() as temporary:
+            with self.subTest(ids=ids), temporary_directory() as temporary:
                 root = Path(temporary) / "project"
                 reference = json_bytes(render_translation("123456", "default", {
                     api_name: {"english": (api_name, ""), "schinese": ("现有译文", "")}
@@ -174,7 +175,7 @@ class PublicDataTests(unittest.TestCase):
                         apply_project(root)
 
     def test_empty_target_and_extra_or_duplicate_ids_are_rejected(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary) / "project"
             self.prepare(root)
             self.translate(root, name="")
@@ -193,7 +194,7 @@ class PublicDataTests(unittest.TestCase):
 
     def test_public_description_only_fields_are_preserved(self):
         page = public_page(description="Description").replace(b'english FIRST', b'').replace(b'english SECOND', b'')
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary) / "project"
             self.prepare(root, {"english": page})
             self.translate(root, name="", description="描述")

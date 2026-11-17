@@ -3,10 +3,11 @@ from __future__ import annotations
 import csv
 import json
 import sys
-import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+
+from test_workspace import temporary_directory
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -18,7 +19,7 @@ from test_bkv import sample_schema, schema_with_name_only_second_achievement  # 
 
 class ProjectWorkflowTests(unittest.TestCase):
     def test_prepare_and_apply_keep_work_and_final_files_separate(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             source = root / "UserGameStatsSchema_123456.bin"
             source.write_bytes(sample_schema())
@@ -102,7 +103,7 @@ class ProjectWorkflowTests(unittest.TestCase):
             self.assertEqual(source.read_bytes(), sample_schema())
 
     def test_apply_requires_all_schema_languages_to_be_consulted(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             source = root / "UserGameStatsSchema_123456.bin"
             source.write_bytes(sample_schema())
@@ -113,7 +114,7 @@ class ProjectWorkflowTests(unittest.TestCase):
                 apply_project(workspace)
 
     def test_apply_preserves_each_achievements_optional_field_pattern(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             source = root / "UserGameStatsSchema_123456.bin"
             source.write_bytes(schema_with_name_only_second_achievement())
@@ -155,7 +156,7 @@ class ProjectWorkflowTests(unittest.TestCase):
             )
 
     def test_apply_rejects_a_target_field_not_used_by_other_languages(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             source = root / "UserGameStatsSchema_123456.bin"
             source.write_bytes(schema_with_name_only_second_achievement())
@@ -188,7 +189,7 @@ class ProjectWorkflowTests(unittest.TestCase):
                 apply_project(workspace)
 
     def test_apply_requires_online_sources_when_network_is_available(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
+        with temporary_directory() as temporary:
             root = Path(temporary)
             source = root / "UserGameStatsSchema_123456.bin"
             source.write_bytes(sample_schema())
