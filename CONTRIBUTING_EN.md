@@ -20,4 +20,6 @@ python -m unittest discover -s test -v
 python <skill-creator>/scripts/quick_validate.py .
 ```
 
+Tests retain `steam-localizer-test-*` workspaces in the system temporary directory; recycle them after use.
+
 Add focused unit tests for new behavior, keep source schemas read-only, reject invalid translations explicitly, and keep process files and final artifacts inside the project directory.

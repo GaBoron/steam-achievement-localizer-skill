@@ -20,4 +20,6 @@ python -m unittest discover -s test -v
 python <skill-creator>/scripts/quick_validate.py .
 ```
 
+测试会在系统临时目录中保留 `steam-localizer-test-*` 工作目录；完成后请通过回收站清理。
+
 新增行为应包含独立单元测试，并保持源文件只读、无效翻译显式报错、过程文件与最终产物集中存放。
