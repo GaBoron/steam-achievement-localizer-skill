@@ -15,7 +15,7 @@ Preserve these module boundaries:
 Run before submitting:
 
 ```powershell
-python -m compileall -q scripts tests
+python -m compileall -q scripts test
 python -m unittest discover -s test -v
 python <skill-creator>/scripts/quick_validate.py .
 ```

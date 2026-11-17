@@ -117,7 +117,7 @@ The report identifies `BIN-derived` or `public-data-derived` and formal JSON eli
 ## Development Checks
 
 ```powershell
-python -m compileall -q scripts tests
+python -m compileall -q scripts test
 python -m unittest discover -s test -v
 python <skill-creator>/scripts/quick_validate.py .
 ```
