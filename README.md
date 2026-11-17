@@ -118,7 +118,7 @@ localization/123456-schinese/
 
 ```powershell
 python -m compileall -q scripts tests
-python -m unittest discover -s tests -v
+python -m unittest discover -s test -v
 python <skill-creator>/scripts/quick_validate.py .
 ```
 
